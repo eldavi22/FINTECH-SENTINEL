@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,6 +22,7 @@
             --semantic-high: #f97316;
             --semantic-medium: #eab308;
             --semantic-low: #22c55e;
+            --semantic-info: #3b82f6;
             --sidebar-width: 260px;
             --topbar-height: 64px;
             --radius-md: 6px;
@@ -32,52 +33,79 @@
         body { background-color: var(--bg-base); color: var(--text-primary); font-size: 14px; overflow: hidden; }
 
         .app-layout { display: flex; height: 100vh; width: 100vw; }
+
         .sidebar { width: var(--sidebar-width); background-color: var(--bg-base); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 20px 0; z-index: 10; }
         .brand { padding: 0 24px 24px 24px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
         .brand-title { font-size: 16px; font-weight: 700; letter-spacing: 1px; color: var(--text-primary); }
         .brand-subtitle { font-size: 11px; color: var(--accent-primary); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .nav-section { padding: 10px 24px; font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 1px; margin-top: 15px; }
+        .nav-section { padding: 10px 24px; font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 1px; }
         .nav-item { padding: 10px 24px; color: var(--text-secondary); text-decoration: none; display: flex; align-items: center; gap: 12px; transition: all 0.2s ease; cursor: pointer; }
         .nav-item:hover, .nav-item.active { background-color: var(--bg-surface); color: var(--accent-primary); border-right: 3px solid var(--accent-primary); }
 
         .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        
         .topbar { height: var(--topbar-height); background-color: var(--bg-surface); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; flex-shrink: 0; }
         .search-bar input { background: var(--bg-base); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 16px; border-radius: var(--radius-md); width: 300px; font-family: inherit; font-size: 13px; }
         .search-bar input:focus { outline: none; border-color: var(--accent-primary); }
         .topbar-actions { display: flex; align-items: center; gap: 20px; font-size: 13px; }
-        
+        .status-indicator { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background-color: var(--semantic-low); box-shadow: 0 0 8px var(--semantic-low); }
+
         .dashboard-canvas { flex: 1; padding: 32px; overflow-y: auto; background-color: var(--bg-base); }
+
         .page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; }
         .page-title h1 { font-size: 18px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
         .page-title p { font-size: 12px; color: var(--text-muted); }
         .page-filters { display: flex; gap: 12px; }
         .filter-btn { background: var(--bg-surface); border: 1px solid var(--border-color); color: var(--text-secondary); padding: 8px 14px; font-size: 12px; border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s ease; }
-        .filter-btn:hover { border-color: var(--text-muted); color: var(--text-primary); }
+        .filter-btn:hover { border-color: var(--border-light); color: var(--text-primary); }
         
-        .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
-        .metric-card { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; gap: 10px; position: relative; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 24px; }
+        .metric-card { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; gap: 10px; position: relative; overflow: hidden; }
         .metric-card.critical::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--semantic-critical); }
-        .metric-title { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+        .metric-title { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .metric-value-container { display: flex; align-items: baseline; gap: 8px; }
         .metric-value { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 500; color: var(--text-primary); }
-        
+        .trend { font-size: 12px; font-weight: 500; }
+        .trend.bad { color: var(--semantic-critical); }
+        .trend.good { color: var(--semantic-low); }
+        .metric-subtitle { font-size: 11px; color: var(--text-muted); }
+
         .analytical-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; margin-bottom: 16px; }
         .panel { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); display: flex; flex-direction: column; overflow: hidden; }
-        .panel-header { padding: 16px 20px; border-bottom: 1px solid var(--border-color); font-size: 12px; font-weight: 600; color: var(--text-primary); text-transform: uppercase; }
-        .panel-body { padding: 20px; flex: 1; overflow-x: auto; }
+        .panel-header { padding: 16px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface); z-index: 2; }
+        .panel-title { font-size: 12px; font-weight: 600; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px; }
+        .panel-actions { font-size: 11px; color: var(--accent-primary); cursor: pointer; }
+        .panel-body { padding: 20px; flex: 1; position: relative; }
+        
         .col-span-8 { grid-column: span 8; }
         .col-span-4 { grid-column: span 4; }
-        .col-span-12 { grid-column: span 12; }
 
-        .badge { padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 600; text-transform: uppercase; }
-        .badge.critical { background: rgba(239,68,68,0.15); color: var(--semantic-critical); border: 1px solid rgba(239,68,68,0.3); }
-        .badge.high { background: rgba(249,115,22,0.15); color: var(--semantic-high); border: 1px solid rgba(249,115,22,0.3); }
-        .badge.low { background: rgba(34,197,94,0.15); color: var(--semantic-low); border: 1px solid rgba(34,197,94,0.3); }
+        .feed-list { display: flex; flex-direction: column; gap: 16px; }
+        .feed-item { display: flex; gap: 12px; align-items: flex-start; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); }
+        .feed-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .feed-icon { margin-top: 2px; font-size: 14px; }
+        .feed-content { flex: 1; }
+        .feed-meta { display: flex; gap: 10px; font-size: 10px; margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; }
+        .feed-time { color: var(--text-muted); }
+        .feed-title { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; }
+        .feed-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.4; }
+
+        .badge { padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge.critical { background: rgba(239, 68, 68, 0.15); color: var(--semantic-critical); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .badge.high { background: rgba(249, 115, 22, 0.15); color: var(--semantic-high); border: 1px solid rgba(249, 115, 22, 0.3); }
+        .badge.medium { background: rgba(234, 179, 8, 0.15); color: var(--semantic-medium); border: 1px solid rgba(234, 179, 8, 0.3); }
+        .badge.low { background: rgba(34, 197, 94, 0.15); color: var(--semantic-low); border: 1px solid rgba(34, 197, 94, 0.3); }
 
         .data-table { width: 100%; border-collapse: collapse; text-align: left; }
-        .data-table th { padding: 12px 20px; font-size: 10px; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid var(--border-color); white-space: nowrap; }
-        .data-table td { padding: 12px 20px; font-size: 12px; border-bottom: 1px solid var(--border-color); white-space: nowrap; color: var(--text-secondary); }
+        .data-table th { padding: 12px 20px; font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-color); white-space: nowrap; position: sticky; top: 0; background: var(--bg-surface); z-index: 1; }
+        .data-table td { padding: 12px 20px; font-size: 12px; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+        .data-table tbody tr { transition: background-color 0.2s ease; cursor: pointer; }
+        .data-table tbody tr:hover { background-color: var(--bg-surface-hover); }
         .data-table td.mono { font-family: 'JetBrains Mono', monospace; }
-        .action-icon { cursor: pointer; padding: 4px 8px; }
+        .data-table td.primary { color: var(--text-primary); font-weight: 500; }
+        .action-icon { color: var(--text-muted); font-weight: bold; cursor: pointer; transition: color 0.2s; padding: 4px 8px; border-radius: 4px; }
+        .action-icon:hover { color: var(--accent-primary); background: rgba(6, 182, 212, 0.1); }
     </style>
 </head>
 <body>
@@ -90,10 +118,13 @@
             <div class="nav-section">Intelligence</div>
             <a class="nav-item active">⌂ Overview</a>
             <a class="nav-item">◈ Risk Intelligence</a>
-            <div class="nav-section">Operations</div>
+            <div class="nav-section" style="margin-top: 15px;">Operations</div>
             <a class="nav-item">◈ Transactions</a>
             <a class="nav-item">◈ Fraud</a>
             <a class="nav-item">◈ Incidents</a>
+            <div class="nav-section" style="margin-top: 15px;">Governance</div>
+            <a class="nav-item">◈ Third-Party Risk</a>
+            <a class="nav-item">◈ Compliance</a>
         </aside>
 
         <main class="main-wrapper">
@@ -102,7 +133,12 @@
                     <input type="text" id="search-input" placeholder="Buscar por TXN ID... (Enter)">
                 </div>
                 <div class="topbar-actions">
-                    <span style="color: var(--text-primary); font-weight: 500;">David Giacone <span style="color: var(--text-muted); font-size:12px;">Analyst</span></span>
+                    <div class="status-indicator">
+                        <div class="dot"></div> All Systems Operational
+                    </div>
+                    <div class="user-profile" style="color: var(--text-primary); font-weight: 500;">
+                        David Giacone <span style="color: var(--text-muted); font-weight: 400; margin-left: 8px;">Analyst</span>
+                    </div>
                 </div>
             </header>
 
@@ -119,120 +155,271 @@
                 </div>
 
                 <div class="metrics-grid">
-                    <div class="metric-card"><div class="metric-title">TOTAL EXPOSURE</div><div class="metric-value">$18.7M</div></div>
-                    <div class="metric-card critical"><div class="metric-title" style="color:var(--semantic-critical)">OPEN INCIDENTS</div><div class="metric-value">14</div></div>
-                    <div class="metric-card"><div class="metric-title">HIGH RISK TXNS</div><div class="metric-value">327</div></div>
-                    <div class="metric-card"><div class="metric-title">SYSTEM HEALTH</div><div class="metric-value">92.4%</div></div>
+                    <div class="metric-card">
+                        <div class="metric-title">TOTAL RISK EXPOSURE</div>
+                        <div class="metric-value-container"><div class="metric-value">$18.7M</div><div class="trend bad">▲ 4.8%</div></div>
+                        <div class="metric-subtitle">vs previous 7 days</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">FRAUD EXPOSURE</div>
+                        <div class="metric-value-container"><div class="metric-value">$2.1M</div><div class="trend good">▼ 3.2%</div></div>
+                        <div class="metric-subtitle">vs previous 7 days</div>
+                    </div>
+                    <div class="metric-card critical">
+                        <div class="metric-title" style="color: var(--semantic-critical);">OPEN CRITICAL INCIDENTS</div>
+                        <div class="metric-value-container"><div class="metric-value">14</div><div class="trend bad">▲ 2</div></div>
+                        <div class="metric-subtitle">vs previous 7 days</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">HIGH RISK TRANSACTIONS</div>
+                        <div class="metric-value-container"><div class="metric-value">327</div><div class="trend bad">▲ 7.1%</div></div>
+                        <div class="metric-subtitle">vs previous 7 days</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">CONTROL EFFECTIVENESS</div>
+                        <div class="metric-value-container"><div class="metric-value">92.4%</div><div class="trend good">▲ 1.6%</div></div>
+                        <div class="metric-subtitle">vs previous 7 days</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">THIRD-PARTY EXPOSURE</div>
+                        <div class="metric-value-container"><div class="metric-value">$4.8M</div><div class="trend good">▼ 1.2%</div></div>
+                        <div class="metric-subtitle">vs previous 7 days</div>
+                    </div>
                 </div>
 
                 <div class="analytical-grid">
                     <div class="panel col-span-8">
-                        <div class="panel-header">RISK TREND</div>
-                        <div class="panel-body"><canvas id="riskTrendChart" style="max-height: 220px;"></canvas></div>
+                        <div class="panel-header">
+                            <div class="panel-title">RISK TREND</div>
+                            <div class="panel-actions">7D | 30D | 90D | 1Y</div>
+                        </div>
+                        <div class="panel-body">
+                            <canvas id="riskTrendChart" style="max-height: 250px;"></canvas>
+                        </div>
                     </div>
+
+                    <div class="panel col-span-4" style="grid-row: span 2;">
+                        <div class="panel-header">
+                            <div class="panel-title">INTELLIGENCE FEED</div>
+                            <div class="panel-actions">View All</div>
+                        </div>
+                        <div class="panel-body" style="overflow-y: auto; max-height: 600px;">
+                            <div class="feed-list">
+                                <div class="feed-item">
+                                    <div class="feed-icon">⚠️</div>
+                                    <div class="feed-content">
+                                        <div class="feed-meta"><span class="feed-time">12m ago</span><span class="badge critical">CRITICAL</span></div>
+                                        <div class="feed-title">New critical vendor assessment</div>
+                                        <div class="feed-desc">Vendor "PayMesh Inc." risk score increased to 92.</div>
+                                    </div>
+                                </div>
+                                <div class="feed-item">
+                                    <div class="feed-icon">🛡️</div>
+                                    <div class="feed-content">
+                                        <div class="feed-meta"><span class="feed-time">21m ago</span><span class="badge high">HIGH</span></div>
+                                        <div class="feed-title">Fraud cluster detected</div>
+                                        <div class="feed-desc">12 transactions flagged in APAC region.</div>
+                                    </div>
+                                </div>
+                                <div class="feed-item">
+                                    <div class="feed-icon">⚙️</div>
+                                    <div class="feed-content">
+                                        <div class="feed-meta"><span class="feed-time">34m ago</span><span class="badge medium">MEDIUM</span></div>
+                                        <div class="feed-title">Control failure reported</div>
+                                        <div class="feed-desc">Access management control failure in EU.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="panel col-span-4">
-                        <div class="panel-header">RISK DISTRIBUTION</div>
-                        <div class="panel-body" style="display:flex; justify-content:center;"><canvas id="riskDistChart" style="max-height: 220px;"></canvas></div>
+                        <div class="panel-header">
+                            <div class="panel-title">RISK DISTRIBUTION</div>
+                        </div>
+                        <div class="panel-body" style="display: flex; justify-content: center; align-items: center; padding-top: 5px;">
+                            <canvas id="riskDistChart" style="max-height: 200px;"></canvas>
+                        </div>
                     </div>
                 </div>
 
                 <div class="analytical-grid">
-                    <div class="panel col-span-12">
-                        <div class="panel-header">TRANSACTION RISK MONITORING</div>
-                        <div class="panel-body">
+                    <div class="panel col-span-8">
+                        <div class="panel-header">
+                            <div class="panel-title">TRANSACTION RISK MONITORING</div>
+                            <div class="panel-actions">View Details</div>
+                        </div>
+                        <div class="panel-body" style="padding: 0; overflow-x: auto; max-height: 300px; overflow-y: auto;">
                             <table class="data-table" id="transactions-table">
                                 <thead>
-                                    <tr><th>TXN ID</th><th>TIMESTAMP</th><th>AMOUNT</th><th>SCORE</th><th>LEVEL</th><th>STATUS</th><th>ACT</th></tr>
+                                    <tr>
+                                        <th>TXN ID</th>
+                                        <th>TIMESTAMP</th>
+                                        <th>AMOUNT</th>
+                                        <th>RISK SCORE</th>
+                                        <th>RISK LEVEL</th>
+                                        <th>STATUS</th>
+                                        <th>ACTION</th>
+                                    </tr>
                                 </thead>
-                                <tbody></tbody>
+                                <tbody>
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="panel col-span-4">
+                        <div class="panel-header">
+                            <div class="panel-title">ACTIVE INCIDENTS</div>
+                            <div class="panel-actions">Manage</div>
+                        </div>
+                        <div class="panel-body" style="padding: 0; overflow-x: auto;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>INCIDENT</th>
+                                        <th>SEVERITY</th>
+                                        <th>STATUS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="primary">Unauthorized Pattern</td>
+                                        <td><span class="badge critical">CRITICAL</span></td>
+                                        <td>Investigating</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="primary">Data Exfiltration</td>
+                                        <td><span class="badge critical">CRITICAL</span></td>
+                                        <td>Containment</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="primary">Vendor Concentration</td>
+                                        <td><span class="badge high">HIGH</span></td>
+                                        <td>Review</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="primary">AML Alert Spike</td>
+                                        <td><span class="badge medium">MEDIUM</span></td>
+                                        <td>Monitoring</td>
+                                    </tr>
+                                </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
+
             </div>
         </main>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // 1. Gráficos
+            // 1. Configuración de Gráficos (Chart.js con protección contra nulos)
             try {
-                Chart.defaults.color = '#64748b'; 
+                Chart.defaults.color = '#64748b';
                 Chart.defaults.font.family = "'Inter', sans-serif";
                 
                 const trendEl = document.getElementById('riskTrendChart');
                 if (trendEl) {
-                    new Chart(trendEl, { 
-                        type: 'line', 
-                        data: { 
-                            labels: ['S1','S2','S3','S4','S5','S6','S7'], 
-                            datasets: [{ label: 'Score', data: [65,59,80,81,56,55,68], borderColor: '#06b6d4', borderWidth: 2, fill: false }] 
-                        }, 
-                        options: { responsive: true, maintainAspectRatio: false } 
+                    new Chart(trendEl.getContext('2d'), {
+                        type: 'line',
+                        data: {
+                            labels: ['Sep 01', 'Sep 02', 'Sep 03', 'Sep 04', 'Sep 05', 'Sep 06', 'Sep 07'],
+                            datasets: [{
+                                label: 'Risk Score', data: [65, 59, 80, 81, 56, 55, 68],
+                                borderColor: '#06b6d4', backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                                borderWidth: 2, tension: 0.4, fill: true,
+                                pointBackgroundColor: '#0f172a', pointBorderColor: '#06b6d4', pointRadius: 4
+                            }, {
+                                label: 'Critical Events', data: [12, 19, 13, 15, 22, 14, 18],
+                                borderColor: '#ef4444', borderWidth: 2, borderDash: [5, 5],
+                                tension: 0.4, pointRadius: 0
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#1e293b' } }, y: { grid: { color: '#1e293b' }, beginAtZero: true } } }
                     });
                 }
 
                 const distEl = document.getElementById('riskDistChart');
                 if (distEl) {
-                    new Chart(distEl, { 
-                        type: 'doughnut', 
-                        data: { 
-                            labels: ['Critical','High','Low'], 
-                            datasets: [{ data: [24,35,13], backgroundColor: ['#ef4444','#f97316','#22c55e'], borderWidth: 0 }] 
-                        }, 
-                        options: { responsive: true, maintainAspectRatio: false, cutout: '70%' } 
+                    new Chart(distEl.getContext('2d'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Critical', 'High', 'Medium', 'Low'],
+                            datasets: [{ data: [24, 35, 28, 13], backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e'], borderColor: '#0f172a', borderWidth: 3 }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels: { boxWidth: 10, padding: 15, font: { size: 11 } } } } }
                     });
                 }
-            } catch (err) {
-                console.error("Error al cargar Chart.js:", err);
+            } catch (e) {
+                console.error("Error al iniciar los gráficos:", e);
             }
 
-            // 2. Fetch de datos
-            async function fetchTxns(query = '') {
+            // 2. Consumo de la API y Renderizado Dinámico con Búsqueda
+            async function fetchAndRenderTransactions(query = '') {
                 try {
                     const url = query ? `/api/transactions?q=${query}` : '/api/transactions';
-                    const res = await fetch(url);
-                    const txns = await res.json();
+                    const response = await fetch(url);
+                    const transactions = await response.json();
                     
-                    const tbody = document.querySelector('#transactions-table tbody');
+                    const tableElement = document.getElementById('transactions-table');
+                    if (!tableElement) return;
+                    const tbody = tableElement.querySelector('tbody');
                     if (!tbody) return;
-                    tbody.innerHTML = '';
                     
-                    if (!txns || txns.length === 0) { 
-                        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:15px;">No hay datos registrados.</td></tr>'; 
-                        return; 
+                    tbody.innerHTML = ''; 
+                    
+                    if (!transactions || transactions.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">No se encontraron registros.</td></tr>';
+                        return;
                     }
 
-                    txns.forEach(t => {
-                        const amt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(t.amount);
-                        const badge = t.risk_level ? t.risk_level.toLowerCase() : 'low';
-                        tbody.innerHTML += `
+                    transactions.forEach(txn => {
+                        const amountFormatted = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(txn.amount);
+                        const badgeClass = txn.risk_level ? txn.risk_level.toLowerCase() : 'low';
+                        let statusColor = 'var(--semantic-low)';
+                        if (txn.status === 'Blocked') statusColor = 'var(--semantic-critical)';
+                        if (txn.status === 'Under Review') statusColor = 'var(--semantic-high)';
+                        
+                        const row = `
                             <tr>
-                                <td class="mono" style="color:white; font-weight:500;">${t.txn_id}</td>
-                                <td class="mono">${t.timestamp}</td>
-                                <td class="mono" style="color:white">${amt}</td>
-                                <td class="mono">${t.risk_score}</td>
-                                <td><span class="badge ${badge}">${t.risk_level}</span></td>
-                                <td>${t.status}</td>
-                                <td><span class="action-icon" onclick="alert('Auditar transacción: ${t.txn_id}')">👁</span></td>
-                            </tr>`;
+                                <td class="mono primary">${txn.txn_id}</td>
+                                <td class="mono">${txn.timestamp}</td>
+                                <td class="mono primary">${amountFormatted}</td>
+                                <td class="mono">${txn.risk_score}</td>
+                                <td><span class="badge ${badgeClass}">${txn.risk_level}</span></td>
+                                <td style="color: ${statusColor};">${txn.status}</td>
+                                <td><span class="action-icon" onclick="alert('Detalle de TXN: ${txn.txn_id}\\nMonto: ${amountFormatted}\\nRiesgo: ${txn.risk_score}/100')">👁</span></td>
+                            </tr>
+                        `;
+                        tbody.innerHTML += row;
                     });
-                } catch (e) { 
-                    console.error("Error al consultar API:", e); 
+                } catch (error) {
+                    console.error("Error al cargar datos:", error);
                 }
             }
 
-            fetchTxns();
+            fetchAndRenderTransactions(); // Carga inicial
 
-            // 3. Event Listeners ultra seguros (Null-Check)
+            // 3. Activación Segura de Botones y Buscador
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        fetchAndRenderTransactions(e.target.value);
+                    }
+                });
+            }
+
             const btnSimulate = document.getElementById('btn-simulate');
             if (btnSimulate) {
                 btnSimulate.addEventListener('click', async () => {
                     try {
                         await fetch('/api/transactions/simulate', { method: 'POST' });
-                        fetchTxns();
-                    } catch (e) {
-                        console.error("Error en simulación:", e);
+                        fetchAndRenderTransactions(); 
+                    } catch (error) {
+                        console.error("Error inyectando fraude:", error);
                     }
                 });
             }
@@ -240,25 +427,18 @@
             const btnRefresh = document.getElementById('btn-refresh');
             if (btnRefresh) {
                 btnRefresh.addEventListener('click', () => {
-                    const searchInput = document.getElementById('search-input');
                     if (searchInput) searchInput.value = '';
-                    fetchTxns();
+                    fetchAndRenderTransactions();
                 });
             }
-
-            const searchInput = document.getElementById('search-input');
-            if (searchInput) {
-                searchInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') fetchTxns(e.target.value);
-                });
-            }
-
+            
+            // Animación Menú Lateral
             const navItems = document.querySelectorAll('.nav-item');
-            navItems.forEach(item => {
-                item.addEventListener('click', (e) => {
-                    navItems.forEach(n => n.classList.remove('active'));
-                    e.target.classList.add('active');
-                });
+            navItems.forEach(item => { 
+                item.addEventListener('click', (e) => { 
+                    navItems.forEach(nav => nav.classList.remove('active')); 
+                    e.currentTarget.classList.add('active'); 
+                }); 
             });
         });
     </script>
