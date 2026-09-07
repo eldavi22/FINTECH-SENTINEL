@@ -1,20 +1,17 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 from sqlalchemy import create_engine, Column, Integer, String, Float
-from sqlalchemy.orm import declarative_base, sessionmaker, Session
-from typing import Optional
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
+import datetime
 import random
-from datetime import datetime
 
-# Configuración de Base de Datos SQLite
 SQLALCHEMY_DATABASE_URL = "sqlite:///./fintech.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# Modelo de Transacción
-class Transaction(Base):
+class TransactionModel(Base):
     __tablename__ = "transactions"
     id = Column(Integer, primary_key=True, index=True)
     txn_id = Column(String, unique=True, index=True)
@@ -26,7 +23,7 @@ class Transaction(Base):
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="FINTECH SENTINEL API", version="2.0")
+app = FastAPI(title="Fintech Sentinel API")
 
 def get_db():
     db = SessionLocal()
@@ -35,51 +32,48 @@ def get_db():
     finally:
         db.close()
 
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
-
-@app.get("/")
-def serve_dashboard():
-    return FileResponse("app/static/index.html")
-
-# ENDPOINT: Leer y buscar transacciones
 @app.get("/api/transactions")
-def get_transactions(q: Optional[str] = None, db: Session = Depends(get_db)):
-    query = db.query(Transaction)
+def get_transactions(q: str = None, db: Session = Depends(get_db)):
+    query = db.query(TransactionModel)
     if q:
-        query = query.filter(Transaction.txn_id.contains(q.upper()))
-    return query.order_by(Transaction.id.desc()).limit(15).all()
+        query = query.filter(TransactionModel.txn_id.contains(q))
+    return query.order_by(TransactionModel.id.desc()).all()
 
-# ENDPOINT: Inyectar fraude simulado
 @app.post("/api/transactions/simulate")
 def simulate_transaction(db: Session = Depends(get_db)):
-    riesgos = [
-        ("CRITICAL", "Blocked", random.randint(85, 99)), 
-        ("HIGH", "Under Review", random.randint(60, 84)), 
-        ("LOW", "Approved", random.randint(10, 30))
-    ]
-    seleccion = random.choice(riesgos)
+    txn_id = f"TXN-{random.randint(1000, 9999)}X"
+    amount = round(random.uniform(500, 95000), 2)
+    score = random.randint(10, 99)
+    level = "CRITICAL" if score > 80 else ("HIGH" if score > 60 else ("MEDIUM" if score > 40 else "LOW"))
+    status = "Blocked" if level == "CRITICAL" else ("Under Review" if level == "HIGH" else "Approved")
     
-    nuevo_id = f"TXN-{random.randint(10000, 99999)}X"
-    nueva_txn = Transaction(
-        txn_id=nuevo_id,
-        timestamp=datetime.now().strftime("%b %d, %H:%M:%S"),
-        amount=round(random.uniform(500.0, 95000.0), 2),
-        risk_score=seleccion[2],
-        risk_level=seleccion[0],
-        status=seleccion[1]
+    new_txn = TransactionModel(
+        txn_id=txn_id,
+        timestamp=datetime.datetime.now().strftime("%b %d, %H:%M:%S"),
+        amount=amount,
+        risk_score=score,
+        risk_level=level,
+        status=status
     )
-    db.add(nueva_txn)
+    db.add(new_txn)
     db.commit()
-    return {"msg": "Alerta generada", "txn_id": nuevo_id}
+    db.refresh(new_txn)
+    return new_txn
 
 @app.get("/api/seed")
 def seed_database(db: Session = Depends(get_db)):
-    if db.query(Transaction).count() == 0:
-        txns = [
-            Transaction(txn_id="TXN-8F3A2K9L", timestamp="Sep 07, 10:24:31", amount=125430.00, risk_score=89, risk_level="CRITICAL", status="Blocked"),
-            Transaction(txn_id="TXN-7D2B1M8P", timestamp="Sep 07, 10:21:18", amount=85200.00, risk_score=75, risk_level="HIGH", status="Under Review")
-        ]
-        db.bulk_save_objects(txns)
-        db.commit()
-        return {"msg": "Base de datos poblada."}
-    return {"msg": "Base ya contiene datos."}
+    sample_data = [
+        ("TXN-31314X", "Sep 07, 20:47:19", 57422.20, 77, "HIGH", "Under Review"),
+        ("TXN-86450X", "Sep 07, 20:47:48", 28017.94, 94, "CRITICAL", "Blocked"),
+        ("TXN-82615X", "Sep 07, 20:43:42", 85669.28, 24, "LOW", "Approved"),
+        ("TXN-83785X", "Sep 07, 20:43:48", 77606.73, 98, "CRITICAL", "Blocked"),
+        ("TXN-63269X", "Sep 07, 20:44:18", 86466.18, 71, "HIGH", "Under Review"),
+    ]
+    for t in sample_data:
+        exists = db.query(TransactionModel).filter_by(txn_id=t[0]).first()
+        if not exists:
+            db.add(TransactionModel(txn_id=t[0], timestamp=t[1], amount=t[2], risk_score=t[3], risk_level=t[4], status=t[5]))
+    db.commit()
+    return {"message": "Database seeded successfully!"}
+
+app.mount("/", StaticFiles(directory="app/static", html=True), name="static")
