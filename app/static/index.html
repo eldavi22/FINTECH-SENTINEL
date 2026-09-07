@@ -144,7 +144,7 @@
         <main class="main-wrapper">
             <header class="topbar">
                 <div class="search-bar">
-                    <input type="text" placeholder="Search for risks, transactions, entities... (CTRL+K)">
+                    <input type="text" placeholder="Search for risks, transactions, entities... (Enter)">
                 </div>
                 <div class="topbar-actions">
                     <div class="status-indicator">
@@ -202,7 +202,6 @@
                     </div>
                 </div>
 
-                <!-- TOP ANALYTICAL ROW (CHARTS & FEED) -->
                 <div class="analytical-grid">
                     <div class="panel col-span-8">
                         <div class="panel-header">
@@ -259,7 +258,6 @@
                     </div>
                 </div>
 
-                <!-- BOTTOM ANALYTICAL ROW (DATA TABLES) -->
                 <div class="analytical-grid">
                     <div class="panel col-span-8">
                         <div class="panel-header">
@@ -280,8 +278,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <!-- Las transacciones se cargarán aquí dinámicamente -->
-                                </tbody>
+                                    </tbody>
                             </table>
                         </div>
                     </div>
@@ -331,7 +328,6 @@
         </main>
     </div>
 
-    <!-- INICIALIZACIÓN DE GRÁFICOS Y CONSUMO DE API -->
     <script>
         // 1. Configuración de Gráficos (Chart.js)
         Chart.defaults.color = '#64748b';
@@ -391,7 +387,7 @@
                             <td class="mono">${txn.risk_score}</td>
                             <td><span class="badge ${badgeClass}">${txn.risk_level}</span></td>
                             <td style="color: ${statusColor};">${txn.status}</td>
-                            <td><span class="action-icon">👁</span></td>
+                            <td><span class="action-icon" onclick="alert('Iniciando protocolo de revisión para: ${txn.txn_id}')">👁</span></td>
                         </tr>
                     `;
                     tbody.innerHTML += row;
@@ -402,6 +398,35 @@
         }
 
         fetchAndRenderTransactions();
+
+        // 3. Lógica de Interfaz (Botones y Menú)
+        document.addEventListener('DOMContentLoaded', () => {
+            // Animación del menú lateral
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    e.target.classList.add('active');
+                });
+            });
+
+            // Alertas en los filtros superiores
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    alert('Filtro seleccionado: ' + e.target.innerText + '\n(Esta acción se conectará al backend en la próxima versión)');
+                });
+            });
+
+            // Buscador superior
+            const searchInput = document.querySelector('.search-bar input');
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    alert('Buscando en la base de datos: ' + e.target.value);
+                    e.target.value = ''; // Limpia el buscador
+                }
+            });
+        });
     </script>
 </body>
 </html>
