@@ -1,445 +1,1376 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FINTECH SENTINEL | Enterprise Risk & Financial Intelligence</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <title>FINTECH SENTINEL | Risk Intelligence</title>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <style>
-        :root {
-            --bg-base: #020617;
-            --bg-surface: #0f172a;
-            --bg-surface-hover: #1e293b; 
-            --border-color: #1e293b;
-            --border-light: #334155;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --accent-primary: #06b6d4;
-            --semantic-critical: #ef4444;
-            --semantic-high: #f97316;
-            --semantic-medium: #eab308;
-            --semantic-low: #22c55e;
-            --sidebar-width: 260px;
-            --topbar-height: 64px;
-            --radius-md: 6px;
-            font-family: 'Inter', sans-serif;
+        * {
+            box-sizing: border-box;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: var(--bg-base); color: var(--text-primary); font-size: 14px; height: 100vh; overflow: hidden; }
+        body {
+            margin: 0;
+            font-family: Inter, Arial, sans-serif;
+            background: #070b14;
+            color: #e8edf7;
+        }
 
-        .app-layout { display: flex; height: 100vh; width: 100vw; }
+        .app {
+            display: flex;
+            min-height: 100vh;
+        }
 
-        .sidebar { width: var(--sidebar-width); background-color: var(--bg-base); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 20px 0; z-index: 10; flex-shrink: 0; }
-        .brand { padding: 0 24px 24px 24px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
-        .brand-title { font-size: 16px; font-weight: 700; letter-spacing: 1px; color: var(--text-primary); }
-        .brand-subtitle { font-size: 11px; color: var(--accent-primary); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .nav-section { padding: 10px 24px; font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 1px; }
-        .nav-item { padding: 10px 24px; color: var(--text-secondary); text-decoration: none; display: flex; align-items: center; gap: 12px; transition: all 0.2s ease; cursor: pointer; }
-        .nav-item:hover, .nav-item.active { background-color: var(--bg-surface); color: var(--accent-primary); border-right: 3px solid var(--accent-primary); }
+        /* SIDEBAR */
 
-        .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        
-        .topbar { height: var(--topbar-height); background-color: var(--bg-surface); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; flex-shrink: 0; }
-        .search-bar input { background: var(--bg-base); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 16px; border-radius: var(--radius-md); width: 300px; font-family: inherit; font-size: 13px; }
-        .search-bar input:focus { outline: none; border-color: var(--accent-primary); }
-        .topbar-actions { display: flex; align-items: center; gap: 20px; font-size: 13px; }
-        .status-indicator { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background-color: var(--semantic-low); box-shadow: 0 0 8px var(--semantic-low); }
+        .sidebar {
+            width: 240px;
+            background: #0b1020;
+            border-right: 1px solid #1c2638;
+            padding: 24px 16px;
+        }
 
-        .dashboard-canvas { flex: 1; padding: 24px 32px; overflow-y: auto; background-color: var(--bg-base); display: flex; flex-direction: column; gap: 20px; }
+        .logo {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            margin-bottom: 35px;
+        }
 
-        .page-header { display: flex; justify-content: space-between; align-items: flex-end; }
-        .page-title h1 { font-size: 18px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
-        .page-title p { font-size: 12px; color: var(--text-muted); }
-        .page-filters { display: flex; gap: 12px; }
-        .filter-btn { background: var(--bg-surface); border: 1px solid var(--border-color); color: var(--text-secondary); padding: 8px 14px; font-size: 12px; border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s ease; }
-        .filter-btn:hover { border-color: var(--border-light); color: var(--text-primary); }
-        
-        .metrics-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
-        .metric-card { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; gap: 8px; position: relative; overflow: hidden; }
-        .metric-card.critical::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--semantic-critical); }
-        .metric-title { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .metric-value-container { display: flex; align-items: baseline; gap: 6px; }
-        .metric-value { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 500; color: var(--text-primary); }
-        .trend { font-size: 11px; font-weight: 500; }
-        .trend.bad { color: var(--semantic-critical); }
-        .trend.good { color: var(--semantic-low); }
-        .metric-subtitle { font-size: 10px; color: var(--text-muted); }
+        .logo span {
+            color: #5eead4;
+        }
 
-        .analytical-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
-        .panel { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); display: flex; flex-direction: column; overflow: hidden; }
-        .panel-header { padding: 14px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface); }
-        .panel-title { font-size: 12px; font-weight: 600; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px; }
-        .panel-actions { font-size: 11px; color: var(--accent-primary); cursor: pointer; }
-        .panel-body { padding: 16px 20px; flex: 1; position: relative; }
-        
-        .col-span-8 { grid-column: span 8; }
-        .col-span-4 { grid-column: span 4; }
+        .nav-title {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            margin: 20px 10px 8px;
+        }
 
-        .feed-list { display: flex; flex-direction: column; gap: 12px; }
-        .feed-item { display: flex; gap: 12px; align-items: flex-start; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); }
-        .feed-item:last-child { border-bottom: none; padding-bottom: 0; }
-        .feed-icon { margin-top: 2px; font-size: 14px; }
-        .feed-content { flex: 1; }
-        .feed-meta { display: flex; gap: 10px; font-size: 10px; margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; }
-        .feed-time { color: var(--text-muted); }
-        .feed-title { font-size: 12px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
-        .feed-desc { font-size: 11px; color: var(--text-secondary); line-height: 1.3; }
+        .nav-item {
+            display: block;
+            padding: 12px 14px;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            color: #94a3b8;
+            cursor: pointer;
+        }
 
-        .badge { padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        .badge.critical { background: rgba(239, 68, 68, 0.15); color: var(--semantic-critical); border: 1px solid rgba(239, 68, 68, 0.3); }
-        .badge.high { background: rgba(249, 115, 22, 0.15); color: var(--semantic-high); border: 1px solid rgba(249, 115, 22, 0.3); }
-        .badge.medium { background: rgba(234, 179, 8, 0.15); color: var(--semantic-medium); border: 1px solid rgba(234, 179, 8, 0.3); }
-        .badge.low { background: rgba(34, 197, 94, 0.15); color: var(--semantic-low); border: 1px solid rgba(34, 197, 94, 0.3); }
+        .nav-item:hover,
+        .nav-item.active {
+            background: #111a2e;
+            color: #5eead4;
+        }
 
-        .data-table { width: 100%; border-collapse: collapse; text-align: left; }
-        .data-table th { padding: 10px 16px; font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-color); background: var(--bg-surface); }
-        .data-table td { padding: 10px 16px; font-size: 12px; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); }
-        .data-table tbody tr:hover { background-color: var(--bg-surface-hover); }
-        .data-table td.mono { font-family: 'JetBrains Mono', monospace; }
-        .data-table td.primary { color: var(--text-primary); font-weight: 500; }
-        .action-icon { color: var(--text-muted); font-weight: bold; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: color 0.2s; }
-        .action-icon:hover { color: var(--accent-primary); background: rgba(6, 182, 212, 0.1); }
+        /* MAIN */
+
+        .main {
+            flex: 1;
+            padding: 25px 30px;
+            overflow-x: auto;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .status {
+            color: #5eead4;
+            font-size: 13px;
+        }
+
+        .status::before {
+            content: "●";
+            margin-right: 7px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #718096;
+            margin-top: 6px;
+        }
+
+        /* CARDS */
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .card {
+            background: #0d1424;
+            border: 1px solid #1b273b;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .card-title {
+            color: #7f8da3;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .card-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+
+        /* GRID */
+
+        .grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .panel {
+            background: #0d1424;
+            border: 1px solid #1b273b;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .panel h2 {
+            margin-top: 0;
+            font-size: 16px;
+        }
+
+        /* FORM */
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        label {
+            display: block;
+            color: #94a3b8;
+            font-size: 12px;
+            margin-bottom: 7px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            background: #080d18;
+            border: 1px solid #263449;
+            color: #e8edf7;
+            border-radius: 7px;
+            padding: 11px;
+            outline: none;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #5eead4;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .full {
+            grid-column: 1 / -1;
+        }
+
+        button {
+            border: 0;
+            border-radius: 7px;
+            padding: 12px 18px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .primary {
+            background: #5eead4;
+            color: #061016;
+        }
+
+        .secondary {
+            background: #182235;
+            color: #dbe5f4;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        /* TABLE */
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px 10px;
+            text-align: left;
+            border-bottom: 1px solid #1c2739;
+            font-size: 13px;
+        }
+
+        th {
+            color: #718096;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        /* RISK */
+
+        .risk-box {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .risk-score {
+            font-size: 55px;
+            font-weight: 800;
+        }
+
+        .risk-level {
+            display: inline-block;
+            padding: 7px 15px;
+            border-radius: 20px;
+            margin-top: 8px;
+            font-weight: 700;
+        }
+
+        .LOW {
+            color: #5eead4;
+            background: rgba(94, 234, 212, .1);
+        }
+
+        .MEDIUM {
+            color: #facc15;
+            background: rgba(250, 204, 21, .1);
+        }
+
+        .HIGH {
+            color: #fb923c;
+            background: rgba(251, 146, 60, .1);
+        }
+
+        .CRITICAL {
+            color: #fb7185;
+            background: rgba(251, 113, 133, .1);
+        }
+
+        /* REPORT */
+
+        .report {
+            line-height: 1.7;
+            color: #cbd5e1;
+        }
+
+        .report strong {
+            color: #fff;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .message {
+            margin-top: 12px;
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        @media (max-width: 1100px) {
+            .cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                padding: 18px;
+            }
+
+            .cards,
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
+
 <body>
-    <div class="app-layout">
-        <aside class="sidebar">
-            <div class="brand">
-                <div class="brand-title">FINTECH SENTINEL</div>
-                <div class="brand-subtitle">Risk Intelligence</div>
+
+<div class="app">
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar">
+
+        <div class="logo">
+            FINTECH <span>SENTINEL</span>
+        </div>
+
+        <div class="nav-title">Intelligence</div>
+
+        <div class="nav-item active">
+            ◈ Overview
+        </div>
+
+        <div class="nav-item">
+            ◇ Risk Intelligence
+        </div>
+
+        <div class="nav-item">
+            ◇ Transactions
+        </div>
+
+        <div class="nav-item">
+            ◇ Fraud Detection
+        </div>
+
+        <div class="nav-title">Governance</div>
+
+        <div class="nav-item">
+            ◇ Incidents
+        </div>
+
+        <div class="nav-item">
+            ◇ Compliance
+        </div>
+
+        <div class="nav-item">
+            ◇ Reports
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN -->
+
+    <main class="main">
+
+        <div class="topbar">
+
+            <div>
+                <h1>Risk Intelligence</h1>
+                <div class="subtitle">
+                    Enterprise Financial Risk & Intelligence Platform
+                </div>
             </div>
-            <div class="nav-section">Intelligence</div>
-            <a class="nav-item active">⌂ Overview</a>
-            <a class="nav-item">◈ Risk Intelligence</a>
-            <div class="nav-section" style="margin-top: 10px;">Operations</div>
-            <a class="nav-item">◈ Transactions</a>
-            <a class="nav-item">◈ Fraud</a>
-            <a class="nav-item">◈ Incidents</a>
-            <div class="nav-section" style="margin-top: 10px;">Governance</div>
-            <a class="nav-item">◈ Third-Party Risk</a>
-            <a class="nav-item">◈ Compliance</a>
-        </aside>
 
-        <main class="main-wrapper">
-            <header class="topbar">
-                <div class="search-bar">
-                    <input type="text" id="search-input" placeholder="Buscar por TXN ID... (Enter)">
-                </div>
-                <div class="topbar-actions">
-                    <div class="status-indicator">
-                        <div class="dot"></div> All Systems Operational
-                    </div>
-                    <div class="user-profile" style="color: var(--text-primary); font-weight: 500;">
-                        David Giacone <span style="color: var(--text-muted); font-weight: 400; margin-left: 8px;">Analyst</span>
-                    </div>
-                </div>
-            </header>
-
-            <div class="dashboard-canvas">
-                <div class="page-header">
-                    <div class="page-title">
-                        <h1>Executive Risk Overview</h1>
-                        <p>Real-time financial risk posture and intelligence</p>
-                    </div>
-                    <div class="page-filters">
-                        <button class="filter-btn" id="btn-simulate" style="color: var(--semantic-critical); border-color: var(--semantic-critical);">⚠️ Inyectar Fraude</button>
-                        <button class="filter-btn" id="btn-refresh">↻ Refrescar</button>
-                    </div>
-                </div>
-
-                <div class="metrics-grid">
-                    <div class="metric-card">
-                        <div class="metric-title">TOTAL EXPOSURE</div>
-                        <div class="metric-value-container"><div class="metric-value">$18.7M</div><div class="trend bad">▲ 4.8%</div></div>
-                        <div class="metric-subtitle">vs previous 7 days</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-title">FRAUD EXPOSURE</div>
-                        <div class="metric-value-container"><div class="metric-value">$2.1M</div><div class="trend good">▼ 3.2%</div></div>
-                        <div class="metric-subtitle">vs previous 7 days</div>
-                    </div>
-                    <div class="metric-card critical">
-                        <div class="metric-title" style="color: var(--semantic-critical);">OPEN INCIDENTS</div>
-                        <div class="metric-value-container"><div class="metric-value">14</div><div class="trend bad">▲ 2</div></div>
-                        <div class="metric-subtitle">vs previous 7 days</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-title">HIGH RISK TXNS</div>
-                        <div class="metric-value-container"><div class="metric-value">327</div><div class="trend bad">▲ 7.1%</div></div>
-                        <div class="metric-subtitle">vs previous 7 days</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-title">CONTROL EFFECT.</div>
-                        <div class="metric-value-container"><div class="metric-value">92.4%</div><div class="trend good">▲ 1.6%</div></div>
-                        <div class="metric-subtitle">vs previous 7 days</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-title">THIRD-PARTY</div>
-                        <div class="metric-value-container"><div class="metric-value">$4.8M</div><div class="trend good">▼ 1.2%</div></div>
-                        <div class="metric-subtitle">vs previous 7 days</div>
-                    </div>
-                </div>
-
-                <!-- ANALYTICAL ROW 1 -->
-                <div class="analytical-grid">
-                    <div class="panel col-span-8">
-                        <div class="panel-header">
-                            <div class="panel-title">RISK TREND</div>
-                            <div class="panel-actions">7D | 30D | 90D</div>
-                        </div>
-                        <div class="panel-body" style="height: 220px;">
-                            <canvas id="riskTrendChart"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="panel col-span-4" style="grid-row: span 2;">
-                        <div class="panel-header">
-                            <div class="panel-title">INTELLIGENCE FEED</div>
-                            <div class="panel-actions">View All</div>
-                        </div>
-                        <div class="panel-body" style="overflow-y: auto; max-height: 480px;">
-                            <div class="feed-list">
-                                <div class="feed-item">
-                                    <div class="feed-icon">⚠️</div>
-                                    <div class="feed-content">
-                                        <div class="feed-meta"><span class="feed-time">12m ago</span><span class="badge critical">CRITICAL</span></div>
-                                        <div class="feed-title">New critical vendor assessment</div>
-                                        <div class="feed-desc">Vendor "PayMesh Inc." risk score increased to 92.</div>
-                                    </div>
-                                </div>
-                                <div class="feed-item">
-                                    <div class="feed-icon">🛡️</div>
-                                    <div class="feed-content">
-                                        <div class="feed-meta"><span class="feed-time">21m ago</span><span class="badge high">HIGH</span></div>
-                                        <div class="feed-title">Fraud cluster detected</div>
-                                        <div class="feed-desc">12 transactions flagged in APAC region.</div>
-                                    </div>
-                                </div>
-                                <div class="feed-item">
-                                    <div class="feed-icon">⚙️</div>
-                                    <div class="feed-content">
-                                        <div class="feed-meta"><span class="feed-time">34m ago</span><span class="badge medium">MEDIUM</span></div>
-                                        <div class="feed-title">Control failure reported</div>
-                                        <div class="feed-desc">Access management control failure in EU.</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="panel col-span-4">
-                        <div class="panel-header">
-                            <div class="panel-title">RISK DISTRIBUTION</div>
-                        </div>
-                        <div class="panel-body" style="display: flex; justify-content: center; align-items: center; height: 220px;">
-                            <canvas id="riskDistChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ANALYTICAL ROW 2: TABLES -->
-                <div class="analytical-grid" style="margin-bottom: 20px;">
-                    <div class="panel col-span-8">
-                        <div class="panel-header">
-                            <div class="panel-title">TRANSACTION RISK MONITORING</div>
-                            <div class="panel-actions">Live DB</div>
-                        </div>
-                        <div class="panel-body" style="padding: 0; max-height: 250px; overflow-y: auto;">
-                            <table class="data-table" id="transactions-table">
-                                <thead>
-                                    <tr>
-                                        <th>TXN ID</th>
-                                        <th>TIMESTAMP</th>
-                                        <th>AMOUNT</th>
-                                        <th>SCORE</th>
-                                        <th>LEVEL</th>
-                                        <th>STATUS</th>
-                                        <th>ACT</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="panel col-span-4">
-                        <div class="panel-header">
-                            <div class="panel-title">ACTIVE INCIDENTS</div>
-                            <div class="panel-actions">Manage</div>
-                        </div>
-                        <div class="panel-body" style="padding: 0; max-height: 250px; overflow-y: auto;">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>INCIDENT</th>
-                                        <th>SEV</th>
-                                        <th>STATUS</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td class="primary">Unauthorized Pattern</td>
-                                        <td><span class="badge critical">CRITICAL</span></td>
-                                        <td>Investigating</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="primary">Data Exfiltration</td>
-                                        <td><span class="badge critical">CRITICAL</span></td>
-                                        <td>Containment</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="primary">Vendor Concentration</td>
-                                        <td><span class="badge high">HIGH</span></td>
-                                        <td>Review</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="primary">AML Alert Spike</td>
-                                        <td><span class="badge medium">MEDIUM</span></td>
-                                        <td>Monitoring</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
+            <div class="status">
+                SYSTEM OPERATIONAL
             </div>
-        </main>
-    </div>
 
-    <!-- SCRIPT DE INICIALIZACIÓN Y CONEXIÓN API -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // 1. Chart.js Gráficos
-            try {
-                Chart.defaults.color = '#64748b';
-                Chart.defaults.font.family = "'Inter', sans-serif";
-                
-                const trendEl = document.getElementById('riskTrendChart');
-                if (trendEl) {
-                    new Chart(trendEl.getContext('2d'), {
-                        type: 'line',
-                        data: {
-                            labels: ['Sep 01', 'Sep 02', 'Sep 03', 'Sep 04', 'Sep 05', 'Sep 06', 'Sep 07'],
-                            datasets: [{
-                                label: 'Risk Score', data: [65, 59, 80, 81, 56, 55, 68],
-                                borderColor: '#06b6d4', backgroundColor: 'rgba(6, 182, 212, 0.1)',
-                                borderWidth: 2, tension: 0.4, fill: true,
-                                pointBackgroundColor: '#0f172a', pointBorderColor: '#06b6d4', pointRadius: 3
-                            }, {
-                                label: 'Critical Events', data: [12, 19, 13, 15, 22, 14, 18],
-                                borderColor: '#ef4444', borderWidth: 2, borderDash: [5, 5],
-                                tension: 0.4, pointRadius: 0
-                            }]
-                        },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#1e293b' } }, y: { grid: { color: '#1e293b' }, beginAtZero: true } } }
-                    });
-                }
+        </div>
 
-                const distEl = document.getElementById('riskDistChart');
-                if (distEl) {
-                    new Chart(distEl.getContext('2d'), {
-                        type: 'doughnut',
-                        data: {
-                            labels: ['Critical', 'High', 'Medium', 'Low'],
-                            datasets: [{ data: [24, 35, 28, 13], backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e'], borderColor: '#0f172a', borderWidth: 2 }]
-                        },
-                        options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels: { boxWidth: 8, padding: 10, font: { size: 10 } } } } }
-                    });
-                }
-            } catch (e) {
-                console.error("Error en Chart.js:", e);
-            }
 
-            // 2. Fetch y Render Dinámico con base de datos SQLite
-            async function fetchAndRenderTransactions(query = '') {
-                try {
-                    const url = query ? `/api/transactions?q=${query}` : '/api/transactions';
-                    const response = await fetch(url);
-                    const transactions = await response.json();
-                    
-                    const tableElement = document.getElementById('transactions-table');
-                    if (!tableElement) return;
-                    const tbody = tableElement.querySelector('tbody');
-                    if (!tbody) return;
-                    
-                    tbody.innerHTML = ''; 
-                    
-                    if (!transactions || transactions.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 15px;">No se encontraron registros.</td></tr>';
-                        return;
-                    }
+        <!-- KPI -->
 
-                    transactions.forEach(txn => {
-                        const amountFormatted = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(txn.amount);
-                        const badgeClass = txn.risk_level ? txn.risk_level.toLowerCase() : 'low';
-                        let statusColor = 'var(--semantic-low)';
-                        if (txn.status === 'Blocked') statusColor = 'var(--semantic-critical)';
-                        if (txn.status === 'Under Review') statusColor = 'var(--semantic-high)';
-                        
-                        const row = `
+        <section class="cards">
+
+            <div class="card">
+                <div class="card-title">
+                    Transactions
+                </div>
+
+                <div class="card-value" id="totalTransactions">
+                    0
+                </div>
+            </div>
+
+
+            <div class="card">
+                <div class="card-title">
+                    Total Exposure
+                </div>
+
+                <div class="card-value" id="totalExposure">
+                    $0.00
+                </div>
+            </div>
+
+
+            <div class="card">
+                <div class="card-title">
+                    High Risk
+                </div>
+
+                <div class="card-value" id="highRisk">
+                    0
+                </div>
+            </div>
+
+
+            <div class="card">
+                <div class="card-title">
+                    Critical
+                </div>
+
+                <div class="card-value" id="criticalRisk">
+                    0
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- DATA INPUT -->
+
+        <section class="panel">
+
+            <h2>
+                Financial Risk Assessment
+            </h2>
+
+            <p class="subtitle">
+                Ingrese una operación para que FINTECH SENTINEL evalúe su nivel de riesgo.
+            </p>
+
+            <form id="riskForm">
+
+                <div class="form-grid">
+
+                    <div>
+                        <label>Transaction ID</label>
+                        <input
+                            type="text"
+                            id="txn_id"
+                            placeholder="TXN-001"
+                            required
+                        >
+                    </div>
+
+
+                    <div>
+                        <label>Amount</label>
+                        <input
+                            type="number"
+                            id="amount"
+                            min="0"
+                            step="0.01"
+                            placeholder="50000"
+                            required
+                        >
+                    </div>
+
+
+                    <div>
+                        <label>Transaction Type</label>
+                        <select id="transaction_type">
+                            <option value="TRANSFER">Transfer</option>
+                            <option value="PAYMENT">Payment</option>
+                            <option value="WITHDRAWAL">Withdrawal</option>
+                            <option value="DEPOSIT">Deposit</option>
+                            <option value="PURCHASE">Purchase</option>
+                        </select>
+                    </div>
+
+
+                    <div>
+                        <label>Customer Risk</label>
+                        <select id="customer_risk">
+                            <option value="LOW">Low</option>
+                            <option value="MEDIUM">Medium</option>
+                            <option value="HIGH">High</option>
+                            <option value="CRITICAL">Critical</option>
+                        </select>
+                    </div>
+
+
+                    <div>
+                        <label>Country Risk</label>
+                        <select id="country_risk">
+                            <option value="LOW">Low</option>
+                            <option value="MEDIUM">Medium</option>
+                            <option value="HIGH">High</option>
+                            <option value="CRITICAL">Critical</option>
+                        </select>
+                    </div>
+
+
+                    <div>
+                        <label>Previous Alerts</label>
+                        <input
+                            type="number"
+                            id="previous_alerts"
+                            min="0"
+                            value="0"
+                        >
+                    </div>
+
+
+                    <div class="full">
+
+                        <label>
+                            Additional Information
+                        </label>
+
+                        <textarea
+                            id="description"
+                            placeholder="Ingrese información adicional de la operación..."
+                        ></textarea>
+
+                    </div>
+
+                </div>
+
+
+                <div class="actions">
+
+                    <button
+                        type="submit"
+                        class="primary"
+                        id="analyzeButton"
+                    >
+                        ANALYZE TRANSACTION
+                    </button>
+
+                    <button
+                        type="button"
+                        class="secondary"
+                        onclick="clearForm()"
+                    >
+                        CLEAR
+                    </button>
+
+                </div>
+
+                <div
+                    class="message"
+                    id="formMessage"
+                ></div>
+
+            </form>
+
+        </section>
+
+
+        <div class="grid">
+
+            <!-- RESULTS -->
+
+            <div>
+
+                <section
+                    class="panel hidden"
+                    id="analysisPanel"
+                >
+
+                    <h2>
+                        Risk Assessment
+                    </h2>
+
+                    <div class="risk-box">
+
+                        <div
+                            class="risk-score"
+                            id="riskScore"
+                        >
+                            0
+                        </div>
+
+                        <div
+                            class="risk-level"
+                            id="riskLevel"
+                        >
+                            -
+                        </div>
+
+                    </div>
+
+
+                    <div class="report">
+
+                        <p>
+                            <strong>Assessment:</strong>
+                            <span id="assessmentText">
+                                -
+                            </span>
+                        </p>
+
+                        <p>
+                            <strong>Risk Factors:</strong>
+                        </p>
+
+                        <ul id="riskFactors"></ul>
+
+                        <p>
+                            <strong>Recommendation:</strong>
+                            <span id="recommendation">
+                                -
+                            </span>
+                        </p>
+
+                    </div>
+
+                </section>
+
+
+                <!-- TRANSACTIONS -->
+
+                <section class="panel">
+
+                    <h2>
+                        Transaction Monitoring
+                    </h2>
+
+                    <table>
+
+                        <thead>
+
                             <tr>
-                                <td class="mono primary">${txn.txn_id}</td>
-                                <td class="mono">${txn.timestamp}</td>
-                                <td class="mono primary">${amountFormatted}</td>
-                                <td class="mono">${txn.risk_score}</td>
-                                <td><span class="badge ${badgeClass}">${txn.risk_level}</span></td>
-                                <td style="color: ${statusColor};">${txn.status}</td>
-                                <td><span class="action-icon" onclick="alert('Detalle de TXN: ${txn.txn_id}\\nMonto: ${amountFormatted}\\nRiesgo: ${txn.risk_score}/100')">👁</span></td>
+                                <th>Transaction</th>
+                                <th>Amount</th>
+                                <th>Risk</th>
+                                <th>Score</th>
+                                <th>Status</th>
                             </tr>
-                        `;
-                        tbody.innerHTML += row;
-                    });
-                } catch (error) {
-                    console.error("Error cargando transacciones:", error);
+
+                        </thead>
+
+                        <tbody id="transactionsTable">
+
+                        </tbody>
+
+                    </table>
+
+                </section>
+
+            </div>
+
+
+            <!-- CHART -->
+
+            <div>
+
+                <section class="panel">
+
+                    <h2>
+                        Risk Distribution
+                    </h2>
+
+                    <canvas id="riskChart"></canvas>
+
+                </section>
+
+
+                <section
+                    class="panel hidden"
+                    id="reportPanel"
+                >
+
+                    <h2>
+                        Intelligence Report
+                    </h2>
+
+                    <div
+                        class="report"
+                        id="generatedReport"
+                    ></div>
+
+                    <div class="actions">
+
+                        <button
+                            class="primary"
+                            onclick="printReport()"
+                        >
+                            PRINT REPORT
+                        </button>
+
+                    </div>
+
+                </section>
+
+            </div>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<script>
+
+const API = "/api";
+
+let riskChart = null;
+
+
+/* ============================================================
+   LOAD TRANSACTIONS
+   ============================================================ */
+
+async function loadTransactions() {
+
+    try {
+
+        const response =
+            await fetch(`${API}/transactions`);
+
+        if (!response.ok) {
+            throw new Error("Unable to load transactions");
+        }
+
+        const data =
+            await response.json();
+
+        renderTransactions(data);
+
+        updateDashboard(data);
+
+    } catch (error) {
+
+        console.error(error);
+
+        document.getElementById(
+            "formMessage"
+        ).textContent =
+            "No se pudieron cargar las transacciones.";
+
+    }
+
+}
+
+
+/* ============================================================
+   RENDER TRANSACTIONS
+   ============================================================ */
+
+function renderTransactions(transactions) {
+
+    const table =
+        document.getElementById(
+            "transactionsTable"
+        );
+
+    table.innerHTML = "";
+
+    transactions.forEach(tx => {
+
+        const row =
+            document.createElement("tr");
+
+        row.innerHTML = `
+
+            <td>${escapeHtml(tx.txn_id)}</td>
+
+            <td>
+                $${Number(tx.amount).toLocaleString(
+                    "en-US",
+                    {
+                        minimumFractionDigits: 2
+                    }
+                )}
+            </td>
+
+            <td>
+                <span class="risk-level ${tx.risk_level}">
+                    ${escapeHtml(tx.risk_level)}
+                </span>
+            </td>
+
+            <td>
+                ${tx.risk_score}
+            </td>
+
+            <td>
+                ${escapeHtml(tx.status)}
+            </td>
+
+        `;
+
+        table.appendChild(row);
+
+    });
+
+}
+
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+
+function updateDashboard(transactions) {
+
+    let exposure = 0;
+    let high = 0;
+    let critical = 0;
+
+    transactions.forEach(tx => {
+
+        exposure += Number(tx.amount) || 0;
+
+        if (
+            tx.risk_level === "HIGH"
+        ) {
+            high++;
+        }
+
+        if (
+            tx.risk_level === "CRITICAL"
+        ) {
+            critical++;
+        }
+
+    });
+
+
+    document.getElementById(
+        "totalTransactions"
+    ).textContent =
+        transactions.length;
+
+
+    document.getElementById(
+        "totalExposure"
+    ).textContent =
+        "$" +
+        exposure.toLocaleString(
+            "en-US",
+            {
+                minimumFractionDigits: 2
+            }
+        );
+
+
+    document.getElementById(
+        "highRisk"
+    ).textContent =
+        high;
+
+
+    document.getElementById(
+        "criticalRisk"
+    ).textContent =
+        critical;
+
+
+    updateChart(transactions);
+}
+
+
+/* ============================================================
+   CHART
+   ============================================================ */
+
+function updateChart(transactions) {
+
+    const counts = {
+        LOW: 0,
+        MEDIUM: 0,
+        HIGH: 0,
+        CRITICAL: 0
+    };
+
+    transactions.forEach(tx => {
+
+        if (
+            counts[tx.risk_level] !== undefined
+        ) {
+            counts[tx.risk_level]++;
+        }
+
+    });
+
+
+    const ctx =
+        document.getElementById(
+            "riskChart"
+        );
+
+
+    if (riskChart) {
+        riskChart.destroy();
+    }
+
+
+    riskChart =
+        new Chart(ctx, {
+
+            type: "doughnut",
+
+            data: {
+
+                labels: [
+                    "LOW",
+                    "MEDIUM",
+                    "HIGH",
+                    "CRITICAL"
+                ],
+
+                datasets: [{
+
+                    data: [
+                        counts.LOW,
+                        counts.MEDIUM,
+                        counts.HIGH,
+                        counts.CRITICAL
+                    ]
+
+                }]
+
+            },
+
+            options: {
+
+                plugins: {
+
+                    legend: {
+                        position: "bottom"
+                    }
+
                 }
+
             }
 
-            fetchAndRenderTransactions();
-
-            // 3. Activación de Controles Interactivos
-            const searchInput = document.getElementById('search-input');
-            if (searchInput) {
-                searchInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        fetchAndRenderTransactions(e.target.value);
-                    }
-                });
-            }
-
-            const btnSimulate = document.getElementById('btn-simulate');
-            if (btnSimulate) {
-                btnSimulate.addEventListener('click', async () => {
-                    try {
-                        await fetch('/api/transactions/simulate', { method: 'POST' });
-                        fetchAndRenderTransactions(); 
-                    } catch (error) {
-                        console.error("Error simulando fraude:", error);
-                    }
-                });
-            }
-
-            const btnRefresh = document.getElementById('btn-refresh');
-            if (btnRefresh) {
-                btnRefresh.addEventListener('click', () => {
-                    if (searchInput) searchInput.value = '';
-                    fetchAndRenderTransactions();
-                });
-            }
-            
-            const navItems = document.querySelectorAll('.nav-item');
-            navItems.forEach(item => { 
-                item.addEventListener('click', (e) => { 
-                    navItems.forEach(nav => nav.classList.remove('active')); 
-                    e.currentTarget.classList.add('active'); 
-                }); 
-            });
         });
-    </script>
+
+}
+
+
+/* ============================================================
+   ANALYZE
+   ============================================================ */
+
+document
+    .getElementById("riskForm")
+    .addEventListener(
+        "submit",
+        analyzeTransaction
+    );
+
+
+async function analyzeTransaction(event) {
+
+    event.preventDefault();
+
+
+    const button =
+        document.getElementById(
+            "analyzeButton"
+        );
+
+    const message =
+        document.getElementById(
+            "formMessage"
+        );
+
+
+    button.disabled = true;
+
+    button.textContent =
+        "ANALYZING...";
+
+    message.textContent =
+        "Procesando evaluación de riesgo...";
+
+
+    const payload = {
+
+        txn_id:
+            document.getElementById(
+                "txn_id"
+            ).value,
+
+        amount:
+            Number(
+                document.getElementById(
+                    "amount"
+                ).value
+            ),
+
+        transaction_type:
+            document.getElementById(
+                "transaction_type"
+            ).value,
+
+        customer_risk:
+            document.getElementById(
+                "customer_risk"
+            ).value,
+
+        country_risk:
+            document.getElementById(
+                "country_risk"
+            ).value,
+
+        previous_alerts:
+            Number(
+                document.getElementById(
+                    "previous_alerts"
+                ).value
+            ),
+
+        description:
+            document.getElementById(
+                "description"
+            ).value
+
+    };
+
+
+    try {
+
+        /*
+         * Este endpoint debe existir en main.py:
+         *
+         * POST /api/risk/analyze
+         */
+
+        const response =
+            await fetch(
+                `${API}/risk/analyze`,
+                {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify(payload)
+
+                }
+            );
+
+
+        if (!response.ok) {
+
+            const errorText =
+                await response.text();
+
+            throw new Error(
+                errorText ||
+                "Risk analysis failed"
+            );
+
+        }
+
+
+        const result =
+            await response.json();
+
+
+        showAnalysis(result);
+
+
+        message.textContent =
+            "Evaluación completada correctamente.";
+
+
+        await loadTransactions();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        message.textContent =
+            "No fue posible completar el análisis.";
+
+    } finally {
+
+        button.disabled = false;
+
+        button.textContent =
+            "ANALYZE TRANSACTION";
+
+    }
+
+}
+
+
+/* ============================================================
+   SHOW ANALYSIS
+   ============================================================ */
+
+function showAnalysis(result) {
+
+    document
+        .getElementById(
+            "analysisPanel"
+        )
+        .classList.remove(
+            "hidden"
+        );
+
+
+    document
+        .getElementById(
+            "riskScore"
+        )
+        .textContent =
+        result.risk_score ?? 0;
+
+
+    const level =
+        result.risk_level ||
+        "UNKNOWN";
+
+
+    const levelElement =
+        document.getElementById(
+            "riskLevel"
+        );
+
+
+    levelElement.textContent =
+        level;
+
+
+    levelElement.className =
+        `risk-level ${level}`;
+
+
+    document
+        .getElementById(
+            "assessmentText"
+        )
+        .textContent =
+        result.assessment ||
+        "Risk assessment completed.";
+
+
+    document
+        .getElementById(
+            "recommendation"
+        )
+        .textContent =
+        result.recommendation ||
+        "Review transaction according to internal controls.";
+
+
+    const factors =
+        document.getElementById(
+            "riskFactors"
+        );
+
+    factors.innerHTML = "";
+
+
+    (
+        result.risk_factors ||
+        []
+    ).forEach(
+        factor => {
+
+            const li =
+                document.createElement(
+                    "li"
+                );
+
+            li.textContent =
+                factor;
+
+            factors.appendChild(li);
+
+        }
+    );
+
+
+    if (
+        result.report
+    ) {
+
+        document
+            .getElementById(
+                "reportPanel"
+            )
+            .classList.remove(
+                "hidden"
+            );
+
+
+        document
+            .getElementById(
+                "generatedReport"
+            )
+            .innerHTML =
+            result.report;
+
+    }
+
+}
+
+
+/* ============================================================
+   CLEAR
+   ============================================================ */
+
+function clearForm() {
+
+    document
+        .getElementById(
+            "riskForm"
+        )
+        .reset();
+
+
+    document
+        .getElementById(
+            "analysisPanel"
+        )
+        .classList.add(
+            "hidden"
+        );
+
+
+    document
+        .getElementById(
+            "reportPanel"
+        )
+        .classList.add(
+            "hidden"
+        );
+
+
+    document
+        .getElementById(
+            "formMessage"
+        )
+        .textContent =
+        "";
+
+}
+
+
+/* ============================================================
+   PRINT
+   ============================================================ */
+
+function printReport() {
+
+    const report =
+        document.getElementById(
+            "generatedReport"
+        ).innerHTML;
+
+
+    const windowPrint =
+        window.open(
+            "",
+            "",
+            "width=900,height=700"
+        );
+
+
+    windowPrint.document.write(`
+
+        <html>
+
+        <head>
+
+            <title>
+                FINTECH SENTINEL - Risk Report
+            </title>
+
+            <style>
+
+                body {
+                    font-family: Arial;
+                    padding: 40px;
+                    color: #111;
+                }
+
+                h1 {
+                    margin-bottom: 5px;
+                }
+
+                .header {
+                    border-bottom: 2px solid #111;
+                    padding-bottom: 15px;
+                    margin-bottom: 25px;
+                }
+
+            </style>
+
+        </head>
+
+        <body>
+
+            <div class="header">
+
+                <h1>
+                    FINTECH SENTINEL
+                </h1>
+
+                <div>
+                    Financial Risk Intelligence Report
+                </div>
+
+            </div>
+
+            ${report}
+
+        </body>
+
+        </html>
+
+    `);
+
+
+    windowPrint.document.close();
+
+    windowPrint.print();
+
+}
+
+
+/* ============================================================
+   SECURITY
+   ============================================================ */
+
+function escapeHtml(value) {
+
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+
+}
+
+
+/* ============================================================
+   INITIALIZE
+   ============================================================ */
+
+loadTransactions();
+
+</script>
+
 </body>
 </html>
