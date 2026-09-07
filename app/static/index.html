@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,11 +9,22 @@
     
     <style>
         :root {
-            --bg-base: #020617; --bg-surface: #0f172a; --bg-surface-hover: #1e293b; 
-            --border-color: #1e293b; --text-primary: #f8fafc; --text-secondary: #94a3b8;
-            --text-muted: #64748b; --accent-primary: #06b6d4; --semantic-critical: #ef4444;
-            --semantic-high: #f97316; --semantic-medium: #eab308; --semantic-low: #22c55e;
-            --sidebar-width: 260px; --topbar-height: 64px; --radius-md: 6px;
+            --bg-base: #020617;
+            --bg-surface: #0f172a;
+            --bg-surface-hover: #1e293b; 
+            --border-color: #1e293b;
+            --border-light: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-primary: #06b6d4;
+            --semantic-critical: #ef4444;
+            --semantic-high: #f97316;
+            --semantic-medium: #eab308;
+            --semantic-low: #22c55e;
+            --sidebar-width: 260px;
+            --topbar-height: 64px;
+            --radius-md: 6px;
             font-family: 'Inter', sans-serif;
         }
 
@@ -43,13 +54,12 @@
         .filter-btn { background: var(--bg-surface); border: 1px solid var(--border-color); color: var(--text-secondary); padding: 8px 14px; font-size: 12px; border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s ease; }
         .filter-btn:hover { border-color: var(--text-muted); color: var(--text-primary); }
         
-        .metrics-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 24px; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
         .metric-card { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; gap: 10px; position: relative; }
         .metric-card.critical::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--semantic-critical); }
         .metric-title { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
         .metric-value { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 500; color: var(--text-primary); }
         
-        /* Sistema de Grillas Reparado */
         .analytical-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; margin-bottom: 16px; }
         .panel { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); display: flex; flex-direction: column; overflow: hidden; }
         .panel-header { padding: 16px 20px; border-bottom: 1px solid var(--border-color); font-size: 12px; font-weight: 600; color: var(--text-primary); text-transform: uppercase; }
@@ -65,7 +75,7 @@
 
         .data-table { width: 100%; border-collapse: collapse; text-align: left; }
         .data-table th { padding: 12px 20px; font-size: 10px; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid var(--border-color); white-space: nowrap; }
-        .data-table td { padding: 12px 20px; font-size: 12px; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+        .data-table td { padding: 12px 20px; font-size: 12px; border-bottom: 1px solid var(--border-color); white-space: nowrap; color: var(--text-secondary); }
         .data-table td.mono { font-family: 'JetBrains Mono', monospace; }
         .action-icon { cursor: pointer; padding: 4px 8px; }
     </style>
@@ -146,45 +156,102 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // 1. Gráficos
-            Chart.defaults.color = '#64748b'; Chart.defaults.font.family = "'Inter', sans-serif";
-            new Chart(document.getElementById('riskTrendChart'), { type: 'line', data: { labels: ['S1','S2','S3','S4','S5','S6','S7'], datasets: [{ label: 'Score', data: [65,59,80,81,56,55,68], borderColor: '#06b6d4', borderWidth: 2, fill: false }] }, options: { responsive: true, maintainAspectRatio: false } });
-            new Chart(document.getElementById('riskDistChart'), { type: 'doughnut', data: { labels: ['Critical','High','Low'], datasets: [{ data: [24,35,13], backgroundColor: ['#ef4444','#f97316','#22c55e'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%' } });
+            try {
+                Chart.defaults.color = '#64748b'; 
+                Chart.defaults.font.family = "'Inter', sans-serif";
+                
+                const trendEl = document.getElementById('riskTrendChart');
+                if (trendEl) {
+                    new Chart(trendEl, { 
+                        type: 'line', 
+                        data: { 
+                            labels: ['S1','S2','S3','S4','S5','S6','S7'], 
+                            datasets: [{ label: 'Score', data: [65,59,80,81,56,55,68], borderColor: '#06b6d4', borderWidth: 2, fill: false }] 
+                        }, 
+                        options: { responsive: true, maintainAspectRatio: false } 
+                    });
+                }
 
-            // 2. Lógica Base de Datos
+                const distEl = document.getElementById('riskDistChart');
+                if (distEl) {
+                    new Chart(distEl, { 
+                        type: 'doughnut', 
+                        data: { 
+                            labels: ['Critical','High','Low'], 
+                            datasets: [{ data: [24,35,13], backgroundColor: ['#ef4444','#f97316','#22c55e'], borderWidth: 0 }] 
+                        }, 
+                        options: { responsive: true, maintainAspectRatio: false, cutout: '70%' } 
+                    });
+                }
+            } catch (err) {
+                console.error("Error al cargar Chart.js:", err);
+            }
+
+            // 2. Fetch de datos
             async function fetchTxns(query = '') {
                 try {
                     const url = query ? `/api/transactions?q=${query}` : '/api/transactions';
                     const res = await fetch(url);
                     const txns = await res.json();
+                    
                     const tbody = document.querySelector('#transactions-table tbody');
+                    if (!tbody) return;
                     tbody.innerHTML = '';
                     
-                    if (txns.length === 0) { tbody.innerHTML = '<tr><td colspan="7">No hay datos.</td></tr>'; return; }
+                    if (!txns || txns.length === 0) { 
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:15px;">No hay datos registrados.</td></tr>'; 
+                        return; 
+                    }
 
                     txns.forEach(t => {
                         const amt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(t.amount);
                         const badge = t.risk_level ? t.risk_level.toLowerCase() : 'low';
-                        tbody.innerHTML += `<tr><td class="mono" style="color:white">${t.txn_id}</td><td class="mono">${t.timestamp}</td><td class="mono">${amt}</td><td class="mono">${t.risk_score}</td><td><span class="badge ${badge}">${t.risk_level}</span></td><td>${t.status}</td><td><span class="action-icon" onclick="alert('Auditar ${t.txn_id}')">👁</span></td></tr>`;
+                        tbody.innerHTML += `
+                            <tr>
+                                <td class="mono" style="color:white; font-weight:500;">${t.txn_id}</td>
+                                <td class="mono">${t.timestamp}</td>
+                                <td class="mono" style="color:white">${amt}</td>
+                                <td class="mono">${t.risk_score}</td>
+                                <td><span class="badge ${badge}">${t.risk_level}</span></td>
+                                <td>${t.status}</td>
+                                <td><span class="action-icon" onclick="alert('Auditar transacción: ${t.txn_id}')">👁</span></td>
+                            </tr>`;
                     });
-                } catch (e) { console.error(e); }
+                } catch (e) { 
+                    console.error("Error al consultar API:", e); 
+                }
             }
 
             fetchTxns();
 
-            // 3. Botones (Event Listeners)
-            document.getElementById('btn-simulate').addEventListener('click', async () => {
-                await fetch('/api/transactions/simulate', { method: 'POST' });
-                fetchTxns();
-            });
+            // 3. Event Listeners ultra seguros (Null-Check)
+            const btnSimulate = document.getElementById('btn-simulate');
+            if (btnSimulate) {
+                btnSimulate.addEventListener('click', async () => {
+                    try {
+                        await fetch('/api/transactions/simulate', { method: 'POST' });
+                        fetchTxns();
+                    } catch (e) {
+                        console.error("Error en simulación:", e);
+                    }
+                });
+            }
 
-            document.getElementById('btn-refresh').addEventListener('click', () => {
-                document.getElementById('search-input').value = '';
-                fetchTxns();
-            });
+            const btnRefresh = document.getElementById('btn-refresh');
+            if (btnRefresh) {
+                btnRefresh.addEventListener('click', () => {
+                    const searchInput = document.getElementById('search-input');
+                    if (searchInput) searchInput.value = '';
+                    fetchTxns();
+                });
+            }
 
-            document.getElementById('search-input').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') fetchTxns(e.target.value);
-            });
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') fetchTxns(e.target.value);
+                });
+            }
 
             const navItems = document.querySelectorAll('.nav-item');
             navItems.forEach(item => {
