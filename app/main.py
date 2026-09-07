@@ -3,6 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlalchemy import create_engine, Column, Integer, String, Float
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from typing import Optional
 import random
 from datetime import datetime
 
@@ -42,7 +43,7 @@ def serve_dashboard():
 
 # ENDPOINT: Leer y buscar transacciones
 @app.get("/api/transactions")
-def get_transactions(q: str = None, db: Session = Depends(get_db)):
+def get_transactions(q: Optional[str] = None, db: Session = Depends(get_db)):
     query = db.query(Transaction)
     if q:
         query = query.filter(Transaction.txn_id.contains(q.upper()))
