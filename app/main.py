@@ -33,7 +33,7 @@ def get_db():
         db.close()
 
 @app.get("/api/transactions")
-def get_transactions(q: str = None, db: Session = Depends(get_db)):
+def get_transactions(q: str | None = None, db: Session = Depends(get_db)):
     query = db.query(TransactionModel)
     if q:
         query = query.filter(TransactionModel.txn_id.contains(q))
