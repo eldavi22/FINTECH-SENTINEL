@@ -1,4 +1,19 @@
+import datetime
+import html
+import random
+import uuid
+from decimal import Decimal
 
+from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field, ConfigDict
+from sqlalchemy import (
+    create_engine,
+    Column,
+    Integer,
+    String,
+    DateTime,
+    Numeric,
     Text,
     inspect,
     text,
@@ -1153,7 +1168,7 @@ def get_risk_assessment(
 
     factors = []
 
-    if assessment.risk_factors:
+    if assessment.risk_factors is not None:
 
         factors = [
             factor
