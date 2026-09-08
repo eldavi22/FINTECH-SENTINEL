@@ -1,31 +1,9 @@
-import datetime
-import html
-import random
-import uuid
-from decimal import Decimal
 
-from fastapi import FastAPI, Depends, HTTPException, Query
-from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field, ConfigDict
-
-from sqlalchemy import (
-    create_engine,
-    Column,
-    Integer,
-    String,
-    DateTime,
-    Numeric,
     Text,
     inspect,
     text,
 )
-
-from sqlalchemy.orm import (
-    declarative_base,
-    sessionmaker,
-    Session,
-)
-
+from sqlalchemy.orm import declarative_base, sessionmaker, Session
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -36,17 +14,11 @@ from sqlalchemy.exc import SQLAlchemyError
 APP_NAME = "FINTECH SENTINEL API"
 APP_VERSION = "1.0.0"
 
-# ETAPA ACTUAL:
-# Base local SQLite.
-# Supabase se incorporará posteriormente.
-
 DATABASE_URL = "sqlite:///./fintech.db"
 
 engine = create_engine(
     DATABASE_URL,
-    connect_args={
-        "check_same_thread": False
-    },
+    connect_args={"check_same_thread": False},
 )
 
 SessionLocal = sessionmaker(
@@ -58,12 +30,16 @@ SessionLocal = sessionmaker(
 Base = declarative_base()
 
 
+def utc_timestamp():
+    """Return a SQLite-safe timestamp string compatible with legacy data."""
+    return datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+
+
 # ============================================================
 # DATABASE MODELS
 # ============================================================
 
 class TransactionModel(Base):
-
     __tablename__ = "transactions"
 
     id = Column(
@@ -79,10 +55,12 @@ class TransactionModel(Base):
         index=True,
     )
 
+    # Stored as text to remain compatible with legacy SQLite records
+    # that use values such as "Sep 07, 10:11:02".
     timestamp = Column(
-        DateTime,
+        String(40),
         nullable=False,
-        default=datetime.datetime.utcnow,
+        default=utc_timestamp,
     )
 
     amount = Column(
@@ -153,7 +131,6 @@ class TransactionModel(Base):
 
 
 class RiskAssessmentModel(Base):
-
     __tablename__ = "risk_assessments"
 
     id = Column(
@@ -218,77 +195,50 @@ class RiskAssessmentModel(Base):
 
 
 # ============================================================
-# DATABASE INITIALIZATION
+# DATABASE INITIALIZATION / MIGRATION
 # ============================================================
 
-Base.metadata.create_all(
-    bind=engine
-)
+Base.metadata.create_all(bind=engine)
 
-
-# ============================================================
-# DATABASE MIGRATION
-# ============================================================
 
 def migrate_transactions_table():
+    """
+    Mantiene la fintech.db existente y agrega las columnas
+    nuevas que necesita FINTECH SENTINEL.
+    """
 
     inspector = inspect(engine)
 
-    tables = inspector.get_table_names()
-
-    if "transactions" not in tables:
+    if "transactions" not in inspector.get_table_names():
         return
 
     existing_columns = {
         column["name"]
-        for column in inspector.get_columns(
-            "transactions"
-        )
+        for column in inspector.get_columns("transactions")
     }
 
     migrations = {
-
-        "transaction_type":
-            "VARCHAR(30)",
-
-        "customer_risk":
-            "VARCHAR(20)",
-
-        "country_risk":
-            "VARCHAR(20)",
-
-        "previous_alerts":
-            "INTEGER DEFAULT 0",
-
-        "description":
-            "TEXT",
-
-        "assessment":
-            "TEXT",
-
-        "recommendation":
-            "TEXT",
-
-        "created_at":
-            "DATETIME",
+        "transaction_type": "VARCHAR(30)",
+        "customer_risk": "VARCHAR(20)",
+        "country_risk": "VARCHAR(20)",
+        "previous_alerts": "INTEGER DEFAULT 0",
+        "description": "TEXT",
+        "assessment": "TEXT",
+        "recommendation": "TEXT",
+        "created_at": "DATETIME",
     }
 
     with engine.begin() as connection:
 
-        for (
-            column_name,
-            column_definition,
-        ) in migrations.items():
+        for column_name, column_definition in migrations.items():
 
             if column_name not in existing_columns:
 
                 connection.execute(
                     text(
-                        f"""
-                        ALTER TABLE transactions
-                        ADD COLUMN {column_name}
-                        {column_definition}
-                        """
+                        f"ALTER TABLE transactions "
+                        f"ADD COLUMN {column_name} "
+                        f"{column_definition}"
                     )
                 )
 
@@ -297,7 +247,7 @@ migrate_transactions_table()
 
 
 # ============================================================
-# FASTAPI APPLICATION
+# FASTAPI
 # ============================================================
 
 app = FastAPI(
@@ -319,11 +269,9 @@ def get_db():
     db = SessionLocal()
 
     try:
-
         yield db
 
     finally:
-
         db.close()
 
 
@@ -338,34 +286,25 @@ class TransactionResponse(BaseModel):
     )
 
     id: int
-
     txn_id: str
-
-    timestamp: datetime.datetime
-
+    timestamp: str
     amount: Decimal
 
     transaction_type: str | None = None
-
     customer_risk: str | None = None
-
     country_risk: str | None = None
 
     previous_alerts: int = 0
-
     description: str | None = None
 
     risk_score: int
-
     risk_level: str
-
     status: str
 
     assessment: str | None = None
-
     recommendation: str | None = None
 
-    created_at: datetime.datetime
+    created_at: datetime.datetime | None = None
 
 
 class RiskAnalysisRequest(BaseModel):
@@ -407,21 +346,13 @@ class RiskAnalysisRequest(BaseModel):
 class RiskAnalysisResponse(BaseModel):
 
     assessment_id: str
-
     txn_id: str
-
     risk_score: int
-
     risk_level: str
-
     status: str
-
     assessment: str
-
     risk_factors: list[str]
-
     recommendation: str
-
     report: str
 
 
@@ -433,18 +364,10 @@ class RiskAnalysisResponse(BaseModel):
 def api_root():
 
     return {
-
-        "application":
-            APP_NAME,
-
-        "version":
-            APP_VERSION,
-
-        "status":
-            "operational",
-
-        "database":
-            "sqlite",
+        "application": APP_NAME,
+        "version": APP_VERSION,
+        "status": "operational",
+        "database": "sqlite",
     }
 
 
@@ -459,20 +382,12 @@ def health_check(
 
     try:
 
-        db.execute(
-            text("SELECT 1")
-        )
+        db.execute(text("SELECT 1"))
 
         return {
-
-            "status":
-                "ok",
-
-            "api":
-                "operational",
-
-            "database":
-                "connected",
+            "status": "ok",
+            "api": "operational",
+            "database": "connected",
         }
 
     except Exception:
@@ -497,9 +412,7 @@ def calculate_risk(
 ):
 
     score = 0
-
     factors = []
-
 
     # --------------------------------------------------------
     # AMOUNT
@@ -518,8 +431,7 @@ def calculate_risk(
         score += 22
 
         factors.append(
-            "Transaction amount exceeds the "
-            "high-value threshold."
+            "Transaction amount exceeds the high-value threshold."
         )
 
     elif amount >= Decimal("25000"):
@@ -527,8 +439,7 @@ def calculate_risk(
         score += 14
 
         factors.append(
-            "Transaction amount is above the "
-            "standard monitoring threshold."
+            "Transaction amount is above the standard monitoring threshold."
         )
 
     elif amount >= Decimal("10000"):
@@ -540,18 +451,12 @@ def calculate_risk(
     # CUSTOMER RISK
     # --------------------------------------------------------
 
-    customer_risk = (
-        customer_risk.upper()
-    )
+    customer_risk = customer_risk.upper()
 
     customer_points = {
-
         "LOW": 0,
-
         "MEDIUM": 12,
-
         "HIGH": 22,
-
         "CRITICAL": 30,
     }
 
@@ -566,8 +471,7 @@ def calculate_risk(
     ):
 
         factors.append(
-            f"Customer risk classification: "
-            f"{customer_risk}."
+            f"Customer risk classification: {customer_risk}."
         )
 
 
@@ -575,18 +479,12 @@ def calculate_risk(
     # COUNTRY RISK
     # --------------------------------------------------------
 
-    country_risk = (
-        country_risk.upper()
-    )
+    country_risk = country_risk.upper()
 
     country_points = {
-
         "LOW": 0,
-
         "MEDIUM": 10,
-
         "HIGH": 20,
-
         "CRITICAL": 28,
     }
 
@@ -601,8 +499,7 @@ def calculate_risk(
     ):
 
         factors.append(
-            f"Country risk classification: "
-            f"{country_risk}."
+            f"Country risk classification: {country_risk}."
         )
 
 
@@ -623,8 +520,7 @@ def calculate_risk(
         score += 18
 
         factors.append(
-            "Several previous alerts are "
-            "associated with the operation."
+            "Several previous alerts are associated with the operation."
         )
 
     elif previous_alerts >= 1:
@@ -640,9 +536,7 @@ def calculate_risk(
     # TRANSACTION TYPE
     # --------------------------------------------------------
 
-    transaction_type = (
-        transaction_type.upper()
-    )
+    transaction_type = transaction_type.upper()
 
     if transaction_type == "WITHDRAWAL":
 
@@ -658,49 +552,31 @@ def calculate_risk(
 
 
     # --------------------------------------------------------
-    # DESCRIPTION ANALYSIS
+    # DESCRIPTION
     # --------------------------------------------------------
 
     if description:
 
-        description_lower = (
-            description.lower()
-        )
+        description_lower = description.lower()
 
         suspicious_terms = [
-
             "fraud",
-
             "fraude",
-
             "anonymous",
-
             "anomalia",
-
             "anomaly",
-
             "urgent",
-
             "urgente",
-
             "suspicious",
-
             "sospechosa",
-
             "chargeback",
-
             "lavado",
-
             "money laundering",
         ]
 
         detected_terms = [
-
             term
-
-            for term
-            in suspicious_terms
-
+            for term in suspicious_terms
             if term in description_lower
         ]
 
@@ -712,13 +588,13 @@ def calculate_risk(
             )
 
             factors.append(
-                "Suspicious indicators detected "
-                "in the transaction description."
+                "Suspicious indicators detected in "
+                "the transaction description."
             )
 
 
     # --------------------------------------------------------
-    # SCORE NORMALIZATION
+    # NORMALIZE SCORE
     # --------------------------------------------------------
 
     score = min(
@@ -737,25 +613,21 @@ def calculate_risk(
     if score >= 80:
 
         level = "CRITICAL"
-
         status = "Blocked"
 
     elif score >= 61:
 
         level = "HIGH"
-
         status = "Under Review"
 
     elif score >= 41:
 
         level = "MEDIUM"
-
         status = "Under Review"
 
     else:
 
         level = "LOW"
-
         status = "Approved"
 
 
@@ -766,71 +638,63 @@ def calculate_risk(
     if not factors:
 
         factors.append(
-            "No significant risk indicators "
-            "were detected."
+            "No significant risk indicators were detected."
         )
 
 
     # --------------------------------------------------------
-    # ASSESSMENT
+    # ASSESSMENT / RECOMMENDATION
     # --------------------------------------------------------
 
     if level == "CRITICAL":
 
         assessment = (
-            "The transaction presents a critical "
-            "level of financial risk and requires "
-            "immediate investigation."
+            "The transaction presents a critical level "
+            "of financial risk and requires immediate "
+            "investigation."
         )
 
         recommendation = (
-            "Block the transaction and initiate "
-            "enhanced review according to the "
-            "organization's fraud, AML and "
-            "financial risk procedures."
+            "Block the transaction and initiate enhanced "
+            "review according to the organization's fraud, "
+            "AML and financial risk procedures."
         )
 
     elif level == "HIGH":
 
         assessment = (
-            "The transaction presents a high level "
-            "of risk and should not be treated as "
-            "a routine operation."
+            "The transaction presents a high level of risk "
+            "and should not be treated as a routine operation."
         )
 
         recommendation = (
-            "Place the transaction under enhanced "
-            "review and validate the relevant "
-            "customer, geographic and transactional "
-            "risk factors."
+            "Place the transaction under enhanced review "
+            "and validate the relevant customer, geographic "
+            "and transactional risk factors."
         )
 
     elif level == "MEDIUM":
 
         assessment = (
-            "The transaction presents a moderate "
-            "level of risk and should remain "
-            "under monitoring."
+            "The transaction presents a moderate level "
+            "of risk and should remain under monitoring."
         )
 
         recommendation = (
-            "Perform enhanced monitoring and verify "
-            "the relevant risk indicators before "
-            "final approval."
+            "Perform enhanced monitoring and verify the "
+            "relevant risk indicators before final approval."
         )
 
     else:
 
         assessment = (
-            "The transaction presents a low level "
-            "of identified risk based on the "
-            "available information."
+            "The transaction presents a low level of "
+            "identified risk based on the available information."
         )
 
         recommendation = (
-            "Approve under normal controls while "
-            "maintaining standard transaction "
-            "monitoring."
+            "Approve under normal controls while maintaining "
+            "standard transaction monitoring."
         )
 
 
@@ -864,46 +728,21 @@ def generate_report(
     recommendation: str,
 ):
 
-    generated_at = (
-        datetime.datetime.utcnow()
-        .strftime(
-            "%Y-%m-%d %H:%M:%S UTC"
-        )
+    generated_at = datetime.datetime.utcnow().strftime(
+        "%Y-%m-%d %H:%M:%S UTC"
     )
 
-
-    safe_txn_id = html.escape(
-        txn_id
-    )
-
-    safe_type = html.escape(
-        transaction_type
-    )
-
-    safe_customer = html.escape(
-        customer_risk
-    )
-
-    safe_country = html.escape(
-        country_risk
-    )
-
-    safe_assessment = html.escape(
-        assessment
-    )
-
-    safe_recommendation = html.escape(
-        recommendation
-    )
-
+    safe_txn_id = html.escape(txn_id)
+    safe_type = html.escape(transaction_type)
+    safe_customer = html.escape(customer_risk)
+    safe_country = html.escape(country_risk)
+    safe_assessment = html.escape(assessment)
+    safe_recommendation = html.escape(recommendation)
 
     factors_html = "".join(
-
         f"<li>{html.escape(factor)}</li>"
-
         for factor in factors
     )
-
 
     report = f"""
     <div class="sentinel-report">
@@ -931,9 +770,7 @@ def generate_report(
             {generated_at}
         </p>
 
-        <h3>
-            Transaction Profile
-        </h3>
+        <h3>Transaction Profile</h3>
 
         <ul>
 
@@ -964,9 +801,7 @@ def generate_report(
 
         </ul>
 
-        <h3>
-            Risk Assessment
-        </h3>
+        <h3>Risk Assessment</h3>
 
         <p>
             <strong>Risk Score:</strong>
@@ -987,17 +822,13 @@ def generate_report(
             {safe_assessment}
         </p>
 
-        <h3>
-            Risk Factors
-        </h3>
+        <h3>Risk Factors</h3>
 
         <ul>
             {factors_html}
         </ul>
 
-        <h3>
-            Recommendation
-        </h3>
+        <h3>Recommendation</h3>
 
         <p>
             {safe_recommendation}
@@ -1007,13 +838,11 @@ def generate_report(
 
         <p>
             <strong>FINTECH SENTINEL</strong><br>
-            Enterprise Financial Risk &
-            Intelligence Platform
+            Enterprise Financial Risk & Intelligence Platform
         </p>
 
     </div>
     """
-
 
     return report
 
@@ -1031,28 +860,29 @@ def analyze_transaction(
     db: Session = Depends(get_db),
 ):
 
+    # --------------------------------------------------------
+    # CHECK DUPLICATE
+    # --------------------------------------------------------
+
     existing = (
-
-        db.query(
-            TransactionModel
-        )
-
+        db.query(TransactionModel)
         .filter(
-            TransactionModel.txn_id
-            == data.txn_id
+            TransactionModel.txn_id == data.txn_id
         )
-
         .first()
     )
 
-
-    if existing is not None:
+    if existing:
 
         raise HTTPException(
             status_code=409,
             detail="Transaction ID already exists.",
         )
 
+
+    # --------------------------------------------------------
+    # CALCULATE
+    # --------------------------------------------------------
 
     (
         score,
@@ -1065,163 +895,135 @@ def analyze_transaction(
 
         amount=data.amount,
 
-        transaction_type=
-            data.transaction_type,
+        transaction_type=data.transaction_type,
 
-        customer_risk=
-            data.customer_risk,
+        customer_risk=data.customer_risk,
 
-        country_risk=
-            data.country_risk,
+        country_risk=data.country_risk,
 
-        previous_alerts=
-            data.previous_alerts,
+        previous_alerts=data.previous_alerts,
 
-        description=
-            data.description,
+        description=data.description,
     )
 
+
+    # --------------------------------------------------------
+    # ASSESSMENT ID
+    # --------------------------------------------------------
 
     assessment_id = (
         "RISK-"
-        + uuid.uuid4()
-        .hex[:12]
-        .upper()
+        + uuid.uuid4().hex[:12].upper()
     )
 
+
+    # --------------------------------------------------------
+    # REPORT
+    # --------------------------------------------------------
 
     report = generate_report(
 
-        assessment_id=
-            assessment_id,
+        assessment_id=assessment_id,
 
-        txn_id=
-            data.txn_id,
+        txn_id=data.txn_id,
 
-        amount=
-            data.amount,
+        amount=data.amount,
 
-        transaction_type=
-            data.transaction_type,
+        transaction_type=data.transaction_type,
 
-        customer_risk=
-            data.customer_risk,
+        customer_risk=data.customer_risk,
 
-        country_risk=
-            data.country_risk,
+        country_risk=data.country_risk,
 
-        previous_alerts=
-            data.previous_alerts,
+        previous_alerts=data.previous_alerts,
 
-        score=
-            score,
+        score=score,
 
-        level=
-            level,
+        level=level,
 
-        status=
-            status,
+        status=status,
 
-        assessment=
-            assessment,
+        assessment=assessment,
 
-        factors=
-            factors,
+        factors=factors,
 
-        recommendation=
-            recommendation,
+        recommendation=recommendation,
     )
 
+
+    # --------------------------------------------------------
+    # TRANSACTION
+    # --------------------------------------------------------
 
     transaction = TransactionModel(
 
-        txn_id=
-            data.txn_id,
+        txn_id=data.txn_id,
 
-        timestamp=
-            datetime.datetime.utcnow(),
+        timestamp=utc_timestamp(),
 
-        amount=
-            data.amount,
+        amount=data.amount,
 
-        transaction_type=
-            data.transaction_type.upper(),
+        transaction_type=data.transaction_type.upper(),
 
-        customer_risk=
-            data.customer_risk.upper(),
+        customer_risk=data.customer_risk.upper(),
 
-        country_risk=
-            data.country_risk.upper(),
+        country_risk=data.country_risk.upper(),
 
-        previous_alerts=
-            data.previous_alerts,
+        previous_alerts=data.previous_alerts,
 
-        description=
-            data.description,
+        description=data.description,
 
-        risk_score=
-            score,
+        risk_score=score,
 
-        risk_level=
-            level,
+        risk_level=level,
 
-        status=
-            status,
+        status=status,
 
-        assessment=
-            assessment,
+        assessment=assessment,
 
-        recommendation=
-            recommendation,
+        recommendation=recommendation,
 
-        created_at=
-            datetime.datetime.utcnow(),
+        created_at=datetime.datetime.utcnow(),
     )
 
+
+    # --------------------------------------------------------
+    # RISK ASSESSMENT
+    # --------------------------------------------------------
 
     risk_assessment = RiskAssessmentModel(
 
-        assessment_id=
-            assessment_id,
+        assessment_id=assessment_id,
 
-        txn_id=
-            data.txn_id,
+        txn_id=data.txn_id,
 
-        risk_score=
-            score,
+        risk_score=score,
 
-        risk_level=
-            level,
+        risk_level=level,
 
-        status=
-            status,
+        status=status,
 
-        assessment=
-            assessment,
+        assessment=assessment,
 
-        risk_factors=
-            "|".join(factors),
+        risk_factors="|".join(factors),
 
-        recommendation=
-            recommendation,
+        recommendation=recommendation,
 
-        report=
-            report,
+        report=report,
 
-        created_at=
-            datetime.datetime.utcnow(),
+        created_at=datetime.datetime.utcnow(),
     )
 
 
+    # --------------------------------------------------------
+    # SAVE
+    # --------------------------------------------------------
+
     try:
 
-        db.add(
-            transaction
-        )
+        db.add(transaction)
 
-        db.add(
-            risk_assessment
-        )
+        db.add(risk_assessment)
 
         db.commit()
 
@@ -1231,40 +1033,24 @@ def analyze_transaction(
 
         raise HTTPException(
             status_code=500,
-            detail=(
-                "Unable to save risk assessment."
-            ),
+            detail="Unable to save risk assessment.",
         )
 
 
+    # --------------------------------------------------------
+    # RESPONSE
+    # --------------------------------------------------------
+
     return {
-
-        "assessment_id":
-            assessment_id,
-
-        "txn_id":
-            data.txn_id,
-
-        "risk_score":
-            score,
-
-        "risk_level":
-            level,
-
-        "status":
-            status,
-
-        "assessment":
-            assessment,
-
-        "risk_factors":
-            factors,
-
-        "recommendation":
-            recommendation,
-
-        "report":
-            report,
+        "assessment_id": assessment_id,
+        "txn_id": data.txn_id,
+        "risk_score": score,
+        "risk_level": level,
+        "status": status,
+        "assessment": assessment,
+        "risk_factors": factors,
+        "recommendation": recommendation,
+        "report": report,
     }
 
 
@@ -1274,15 +1060,12 @@ def analyze_transaction(
 
 @app.get(
     "/api/transactions",
-    response_model=list[
-        TransactionResponse
-    ],
+    response_model=list[TransactionResponse],
 )
 def get_transactions(
     q: str | None = Query(
         default=None,
-        description=
-            "Search transaction ID",
+        description="Search transaction ID",
     ),
     db: Session = Depends(get_db),
 ):
@@ -1291,27 +1074,20 @@ def get_transactions(
         TransactionModel
     )
 
-
     if q:
 
         query = query.filter(
-
             TransactionModel.txn_id.ilike(
                 f"%{q}%"
             )
         )
 
-
     return (
-
         query
-
         .order_by(
             TransactionModel.id.desc()
         )
-
         .limit(500)
-
         .all()
     )
 
@@ -1330,27 +1106,19 @@ def get_transaction(
 ):
 
     transaction = (
-
-        db.query(
-            TransactionModel
-        )
-
+        db.query(TransactionModel)
         .filter(
-            TransactionModel.txn_id
-            == txn_id
+            TransactionModel.txn_id == txn_id
         )
-
         .first()
     )
 
-
-    if transaction is None:
+    if not transaction:
 
         raise HTTPException(
             status_code=404,
             detail="Transaction not found.",
         )
-
 
     return transaction
 
@@ -1368,43 +1136,31 @@ def get_risk_assessment(
 ):
 
     assessment = (
-
-        db.query(
-            RiskAssessmentModel
-        )
-
+        db.query(RiskAssessmentModel)
         .filter(
             RiskAssessmentModel.assessment_id
             == assessment_id
         )
-
         .first()
     )
 
-
-    if assessment is None:
+    if not assessment:
 
         raise HTTPException(
             status_code=404,
             detail="Risk assessment not found.",
         )
 
-
     factors = []
 
-
-    if assessment.risk_factors is not None:
+    if assessment.risk_factors:
 
         factors = [
-
             factor
-
             for factor
             in assessment.risk_factors.split("|")
-
             if factor
         ]
-
 
     return {
 
@@ -1454,11 +1210,8 @@ def simulate_transaction(
 
     txn_id = (
         "TXN-"
-        + uuid.uuid4()
-        .hex[:10]
-        .upper()
+        + uuid.uuid4().hex[:10].upper()
     )
-
 
     amount = Decimal(
         str(
@@ -1472,12 +1225,10 @@ def simulate_transaction(
         )
     )
 
-
     score = random.randint(
         10,
         99,
     )
-
 
     if score >= 80:
 
@@ -1502,62 +1253,48 @@ def simulate_transaction(
 
     transaction = TransactionModel(
 
-        txn_id=
-            txn_id,
+        txn_id=txn_id,
 
-        timestamp=
-            datetime.datetime.utcnow(),
+        timestamp=utc_timestamp(),
 
-        amount=
-            amount,
+        amount=amount,
 
-        transaction_type=
-            "TRANSFER",
+        transaction_type="TRANSFER",
 
-        customer_risk=
-            "MEDIUM",
+        customer_risk="MEDIUM",
 
-        country_risk=
-            "MEDIUM",
+        country_risk="MEDIUM",
 
-        previous_alerts=
-            0,
+        previous_alerts=0,
 
-        description=
-            "Simulated transaction",
+        description="Simulated transaction",
 
-        risk_score=
-            score,
+        risk_score=score,
 
-        risk_level=
-            level,
+        risk_level=level,
 
-        status=
-            status,
+        status=status,
 
-        assessment=
+        assessment=(
             "Simulated transaction generated "
-            "for system testing.",
+            "for system testing."
+        ),
 
-        recommendation=
-            "Review simulated transaction.",
+        recommendation=(
+            "Review simulated transaction."
+        ),
 
-        created_at=
-            datetime.datetime.utcnow(),
+        created_at=datetime.datetime.utcnow(),
     )
 
 
     try:
 
-        db.add(
-            transaction
-        )
+        db.add(transaction)
 
         db.commit()
 
-        db.refresh(
-            transaction
-        )
+        db.refresh(transaction)
 
         return transaction
 
@@ -1567,10 +1304,7 @@ def simulate_transaction(
 
         raise HTTPException(
             status_code=500,
-            detail=(
-                "Unable to create "
-                "simulated transaction."
-            ),
+            detail="Unable to create simulated transaction.",
         )
 
 
@@ -1640,88 +1374,65 @@ def seed_database(
             status,
         ) in sample_data:
 
-
             exists = (
-
-                db.query(
-                    TransactionModel
-                )
-
+                db.query(TransactionModel)
                 .filter(
                     TransactionModel.txn_id
                     == txn_id
                 )
-
                 .first()
             )
 
-
-            if exists is not None:
-
+            if exists:
                 continue
 
 
             transaction = TransactionModel(
 
-                txn_id=
-                    txn_id,
+                txn_id=txn_id,
 
-                timestamp=
-                    datetime.datetime.utcnow(),
+                timestamp=utc_timestamp(),
 
-                amount=
-                    amount,
+                amount=amount,
 
-                transaction_type=
-                    "TRANSFER",
+                transaction_type="TRANSFER",
 
                 customer_risk=(
-
                     "HIGH"
-
                     if level
                     in (
                         "HIGH",
                         "CRITICAL",
                     )
-
                     else "LOW"
                 ),
 
-                country_risk=
-                    "MEDIUM",
+                country_risk="MEDIUM",
 
-                previous_alerts=
-                    0,
+                previous_alerts=0,
 
-                description=
-                    "Seed transaction",
+                description="Seed transaction",
 
-                risk_score=
-                    score,
+                risk_score=score,
 
-                risk_level=
-                    level,
+                risk_level=level,
 
-                status=
-                    status,
+                status=status,
 
-                assessment=
-                    "Seed transaction for "
-                    "system initialization.",
+                assessment=(
+                    "Seed transaction "
+                    "for system initialization."
+                ),
 
-                recommendation=
+                recommendation=(
                     "Review according to "
-                    "standard controls.",
+                    "standard controls."
+                ),
 
-                created_at=
-                    datetime.datetime.utcnow(),
+                created_at=datetime.datetime.utcnow(),
             )
 
-
-            db.add(
-                transaction
-            )
+            db.add(transaction)
 
             inserted += 1
 
@@ -1730,7 +1441,6 @@ def seed_database(
 
 
         return {
-
             "message":
                 "Database seeded successfully.",
 
@@ -1745,9 +1455,7 @@ def seed_database(
 
         raise HTTPException(
             status_code=500,
-            detail=(
-                "Unable to seed database."
-            ),
+            detail="Unable to seed database.",
         )
 
 
