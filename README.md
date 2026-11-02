@@ -328,7 +328,7 @@ Author
 
 David Giacone
 
-I maintain this project through my GitHub account, `eldavi22`. The commit history under that account documents the project's development and updates.
+I developed and own this project and maintain it through my GitHub account, `eldavi22`. Some earlier repository commits were made through the `jotaa7776` account while changes were being uploaded. Those commit records reflect repository updates, not ownership of FINTECH SENTINEL.
 
 Full-Stack Developer with a background in security, risk management, controls and operational analysis.
 
