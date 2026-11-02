@@ -328,6 +328,8 @@ Author
 
 David Giacone
 
+I maintain this project through my GitHub account, `eldavi22`. The commit history under that account documents the project's development and updates.
+
 Full-Stack Developer with a background in security, risk management, controls and operational analysis.
 
 This project reflects an approach of combining software engineering with domain knowledge in financial risk, cybersecurity, GRC and operational decision-making.
